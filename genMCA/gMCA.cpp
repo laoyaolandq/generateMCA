@@ -7,6 +7,7 @@
 #include<algorithm>
 #include<windows.h>
 #include<StringAsKey.h>
+#include<algorithm>
 using namespace std;
 bool findMCA;
 int t,N,k,maxV,secMaxV,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
@@ -417,6 +418,71 @@ void printMCA()
 		}
 		printf("\n");
 	}
+}
+void addOneTuple(int c)
+{
+	hash_map<string, int> specTuple;
+	int existComNum=0,maxNum=-1;
+	string maxNumIndex;
+	for(int row=0;row<N;row++)
+	{
+		string comb;
+		int curIndex=0;
+		for(int i=k-1;i>=0;i--)
+		{
+			if(combinations[c][i]==false)
+			{
+				int tempV,zeroNum=0;
+				tempV=v[i]-1;
+				do
+				{
+					zeroNum++;
+					tempV=tempV/10;
+				}while(tempV!=0);
+				comb.insert(curIndex,zeroNum,'x');
+				curIndex+=zeroNum;
+			}
+			else
+			{
+				int tempV,tempMij;
+				tempV=v[i]-1;
+				tempMij=MCA[row][i];
+				do
+				{
+					tempV=tempV/10;
+					int temp=tempMij%10;
+					comb.insert(curIndex++,1,(char)(temp+48));
+					tempMij=tempMij/10;
+				}while(tempV!=0);
+			}
+		}
+		hash_map<string, int>::iterator iter=specTuple.find(comb);
+		if(iter==specTuple.end())
+		{
+			specTuple.insert(make_pair(comb,1));
+			existComNum++;
+		}
+		else
+		{
+			specTuple[comb]++;
+			if(specTuple[comb]>maxNum)
+			{
+				maxNum=specTuple[comb];
+				maxNumIndex=comb;
+			}
+		}
+	}
+	int total=1;
+	for(int i=k-1;i>=0;i--)
+	{
+		if(combinations[c][i]==true)
+		{
+			total=total*v[i];
+		}
+	}
+	if(existComNum==total)
+		return;
+
 }
 int main()
 {
