@@ -7,7 +7,6 @@
 #include<algorithm>
 #include<windows.h>
 #include<StringAsKey.h>
-#include<algorithm>
 using namespace std;
 bool findMCA;
 int t,N,k,maxV,secMaxV,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
@@ -204,7 +203,7 @@ int countT(vector<bool> w)
 			count++;
 	return count;
 }
-void updateCIR(int type,vector<int> row,int rowNum)
+void updateCIR(int type,vector<int> row,int rowNum)// type=1 erase old row,=2 replace old row,=3 add new row
 {
 	combNumInRow[minRowIndex]=0;
 	for(int c=0;c<paraCombNum;c++)
@@ -419,13 +418,35 @@ void printMCA()
 		printf("\n");
 	}
 }
-void addOneTuple(int c)
+void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 {
-	hash_map<string, int> specTuple;
-	int existComNum=0,maxNum=-1;
-	string maxNumIndex;
-	for(int row=0;row<N;row++)
+	if(flag==true)
+		return;
+	if(dep<t)
 	{
+		for(int i=0;i<vNum[dep];i++)
+		{
+			curComb[dep]=i;
+			dfs(curComb,vNum,dep+1,c,flag);
+			if(flag==true)
+				break;
+		}
+	}
+	else
+	{
+		vector<int> newRow;
+		for(int i=0,j=0;i<k;i++)
+		{
+			if(combinations[c][i]==true)
+			{
+				newRow[i]=curComb[j];
+				j++;
+			}
+			else
+			{
+				newRow[i]=0;
+			}
+		}
 		string comb;
 		int curIndex=0;
 		for(int i=k-1;i>=0;i--)
@@ -446,7 +467,7 @@ void addOneTuple(int c)
 			{
 				int tempV,tempMij;
 				tempV=v[i]-1;
-				tempMij=MCA[row][i];
+				tempMij=newRow[i];
 				do
 				{
 					tempV=tempV/10;
@@ -456,33 +477,49 @@ void addOneTuple(int c)
 				}while(tempV!=0);
 			}
 		}
-		hash_map<string, int>::iterator iter=specTuple.find(comb);
-		if(iter==specTuple.end())
+		hash_map<string, int>::iterator iter=G.find(comb);
+		if(iter==G.end())
 		{
-			specTuple.insert(make_pair(comb,1));
-			existComNum++;
-		}
-		else
-		{
-			specTuple[comb]++;
-			if(specTuple[comb]>maxNum)
+			for(int row=0;row<N;row++)
 			{
-				maxNum=specTuple[comb];
-				maxNumIndex=comb;
+				for(int i=0;i<k;i++)
+				{
+					if(combinations[c][i]==false)
+					{
+						newRow[i]=MCA[row][i];
+					}
+				}
+				int res=fitness(3,newRow)-fitness(2,MCA[row]);
+				if(res<0)
+				{
+					vector<int> temp=MCA[row];
+					MCA[row]=newRow;
+					updateCIR(1,temp,0);
+					updateCIR(2,newRow,0);
+					flag=true;
+				}
+				if(flag==true)
+					break;
 			}
 		}
 	}
-	int total=1;
-	for(int i=k-1;i>=0;i--)
+	return;
+}
+void tryAddOneTuple(int c)
+{
+	int* curComb=new int[t];
+	int* vNum=new int[t];
+	for(int i=k-1,j=t-1;i>=0;i--)
 	{
 		if(combinations[c][i]==true)
 		{
-			total=total*v[i];
+			vNum[j]=v[i];
+			j--;
 		}
 	}
-	if(existComNum==total)
-		return;
-
+	bool flag=false;
+	dfs(curComb,vNum,0,c,flag);
+	return;
 }
 int main()
 {
