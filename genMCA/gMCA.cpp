@@ -9,7 +9,7 @@
 #include<StringAsKey.h>
 using namespace std;
 bool findMCA;
-int t,N,k,maxV,secMaxV,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
+int t,N,k,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
 int NP,gNum;
 float F,CR;
 vector<vector<int>> MCA;
@@ -203,7 +203,7 @@ int countT(vector<bool> w)
 			count++;
 	return count;
 }
-void updateCIR(int type,vector<int> row,int rowNum)// type=1 erase old row,=2 replace old row,=3 add new row
+void updateCIR(int type,vector<int> row,int rowNum,bool ifNeed)// type=1 erase old row,=2 replace old row,=3 add new row
 {
 	combNumInRow[minRowIndex]=0;
 	for(int c=0;c<paraCombNum;c++)
@@ -319,6 +319,8 @@ void updateCIR(int type,vector<int> row,int rowNum)// type=1 erase old row,=2 re
 			}
 		}
 	}
+	if(ifNeed==false)
+		return;
 	minCombRow=paraCombNum;
 	for(int i=0;i<N;i++)
 	{
@@ -439,12 +441,12 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 		{
 			if(combinations[c][i]==true)
 			{
-				newRow[i]=curComb[j];
+				newRow.insert(newRow.begin()+i,curComb[j]);
 				j++;
 			}
 			else
 			{
-				newRow[i]=0;
+				newRow.insert(newRow.begin()+i,0);
 			}
 		}
 		string comb;
@@ -480,8 +482,12 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 		hash_map<string, int>::iterator iter=G.find(comb);
 		if(iter==G.end())
 		{
-			for(int row=0;row<N;row++)
+			//for(int row=0;row<N;row++)
+			for(int i=0;i<2*N;i++)
 			{
+				int row=rand()%N;
+				minCombRow=combNumInRow[row];
+				minRowIndex=row;
 				for(int i=0;i<k;i++)
 				{
 					if(combinations[c][i]==false)
@@ -494,9 +500,10 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 				{
 					vector<int> temp=MCA[row];
 					MCA[row]=newRow;
-					updateCIR(1,temp,0);
-					updateCIR(2,newRow,0);
+					updateCIR(1,temp,0,false);
+					updateCIR(2,newRow,0,false);
 					flag=true;
+					//printf("%d  %d\n",curCombNum,totalCombNum);
 				}
 				if(flag==true)
 					break;
@@ -523,13 +530,11 @@ void tryAddOneTuple(int c)
 }
 int main()
 {
-	F=0.2;
+	F=2;
 	CR=0.2;
 	totalCombNum=0;
 	curCombNum=0;
 	paraCombNum=0;
-	maxV=-1;
-	secMaxV=-1;
 	printf("Input parameter t k NP GNUM v1 v2 ... vk:\n");
 	scanf("%d%d%d%d",&t,&k,&NP,&gNum);
 	if(k==1)
@@ -542,6 +547,7 @@ int main()
 	{
 		printf("%d%d%d%d",a[0],a[1],a[2],a[3]);
 	}while(next_permutation(a,a+4));*/
+	int* vt=new int[k];
 	for(int i=0;i<k;i++)
 	{
 		int temp;
@@ -552,28 +558,29 @@ int main()
 			return 0;
 		}
 		v.insert(v.begin()+i,temp);
-		if(v[i]>maxV)
-		{
-			secMaxV=maxV;
-			maxV=v[i];
-			continue;
-		}
-		if(v[i]==maxV&&v[i]>secMaxV)
-		{
-			secMaxV=v[i];
-			continue;
-		}
-		if(v[i]<maxV&&v[i]>secMaxV)
-		{
-			secMaxV=v[i];
-			continue;
-		}
+		vt[i]=temp;
 	}
 	//initialize parameters and MCA
-	N=maxV*secMaxV;
+	for(int i=1;i<k;i++)
+	{
+		for(int j=0;j<i;j++)
+		{
+			if(vt[j]<vt[i])
+			{
+				int temp=vt[j];
+				vt[j]=vt[i];
+				vt[i]=temp;
+			}
+		}
+	}
+	N=1;
+	for(int i=0;i<t;i++)
+	{
+		N=N*vt[i];
+	}
 	LARGE_INTEGER  large_interger;  
 	double dff;  
-	__int64  c1, c2;  
+	__int64  c1, c2;
 	QueryPerformanceFrequency(&large_interger);  
 	dff = large_interger.QuadPart;  
 	QueryPerformanceCounter(&large_interger);  
@@ -642,8 +649,8 @@ int main()
 				{
 					vector<int> temp=MCA[minRowIndex];
 					MCA[minRowIndex]=fCandiIn;
-					updateCIR(1,temp,0);
-					updateCIR(2,fCandiIn,0);
+					updateCIR(1,temp,0,true);
+					updateCIR(2,fCandiIn,0,true);
 				}
 				if(fitness(1,MCA[0])==0)
 				{
@@ -655,8 +662,27 @@ int main()
 				}
 			}
 		}
+		int count=0,maxCount=2*N,preTotalCombNum=totalCombNum;
+		while(count<maxCount)
+		{
+			//int rrow=rand()%paraCombNum;
+			for(int rrow=0;rrow<paraCombNum;rrow++)
+			tryAddOneTuple(rrow);
+			if(preTotalCombNum==totalCombNum)
+				count++;
+			else
+				preTotalCombNum=totalCombNum;
+			if(fitness(1,MCA[0])==0)
+			{
+				QueryPerformanceCounter(&large_interger);  
+				c2 = large_interger.QuadPart;
+				printMCA();
+				printf("N=%d ÓÃÊ±%f ms\n",N,(c2 - c1) * 1000 / dff);
+				return 0;
+			}
+		}
 		addOneRow(N);
-		updateCIR(3,MCA[N],N);
+		updateCIR(3,MCA[N],N,true);
 		N=N+1;
 	}
 	return 0;
