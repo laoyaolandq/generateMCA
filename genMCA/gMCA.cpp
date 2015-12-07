@@ -9,37 +9,58 @@
 #include<StringAsKey.h>
 using namespace std;
 bool findMCA;
+int p;
 int t,N,k,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
-int NP,gNum;
-float F,CR;
+int NP;
 vector<vector<int>> MCA;
-vector<vector<int>> group;
 vector<vector<bool>> combinations;
 vector<vector<string>> combInRow;
 vector<int> combNumInRow;
 vector<vector<bool>> combWhetherUnique;
 vector<int> v;
 hash_map <string,int> G;
+int calculateHD(int row,vector<int> curCandidateRow)
+{
+	int hmDistance=0;
+	for(int j=0;j<k;j++)
+	{
+		int columnHMD=0;
+		for(int i=0;i<row;i++)
+		{
+			if(MCA[i][j]!=curCandidateRow[j])
+				columnHMD++;
+		}
+		hmDistance=hmDistance+columnHMD;
+	}
+	return hmDistance;
+}
 void initMCA()
 {
-	srand(time(NULL)+rand());
-	for(int i=0;i<N;i++)
+	srand(time(NULL));
+	vector<int> firstRow;
+	for(int j=0;j<k;j++)
+		firstRow.insert(firstRow.begin()+j,rand()%v[j]);
+	MCA.insert(MCA.begin(),firstRow);
+	for(int row=1;row<N;row++)
 	{
-		vector<int> temp;
+		vector<int> firstTry;
 		for(int j=0;j<k;j++)
-			temp.insert(temp.begin()+j,rand()%v[j]);
-		MCA.insert(MCA.begin()+i,temp);
-	}
-}
-void initGroup()
-{
-	srand(time(NULL)+rand());
-	for(int i=0;i<NP;i++)
-	{
-		vector<int> temp;
-		for(int j=0;j<k;j++)
-			temp.insert(temp.begin()+j,rand()%v[j]);
-		group.insert(group.begin()+i,temp);
+			firstTry.insert(firstTry.begin()+j,rand()%v[j]);
+		MCA.insert(MCA.begin()+row,firstTry);
+		int maxHDRow=calculateHD(row,firstTry);
+		for(int i=1;i<p;i++)
+		{
+			vector<int> temp;
+			for(int j=0;j<k;j++)
+				temp.insert(temp.begin()+j,rand()%v[j]);
+			int curRowHD=calculateHD(row,temp);
+			if(curRowHD>maxHDRow)
+			{
+				MCA[row]=temp;
+				maxHDRow=curRowHD;
+			}
+		}
+		printf("maxHammingDistance is %d\n",maxHDRow);
 	}
 }
 void genCombs()
@@ -482,10 +503,9 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 		hash_map<string, int>::iterator iter=G.find(comb);
 		if(iter==G.end())
 		{
-			//for(int row=0;row<N;row++)
-			for(int i=0;i<2*N;i++)
+			int rowIndex,minRes=0;
+			for(int row=0;row<N;row++)
 			{
-				int row=rand()%N;
 				minCombRow=combNumInRow[row];
 				minRowIndex=row;
 				for(int i=0;i<k;i++)
@@ -496,17 +516,27 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 					}
 				}
 				int res=fitness(3,newRow)-fitness(2,MCA[row]);
-				if(res<0)
+				if(res<minRes)
 				{
-					vector<int> temp=MCA[row];
-					MCA[row]=newRow;
-					updateCIR(1,temp,0,false);
-					updateCIR(2,newRow,0,false);
-					flag=true;
-					//printf("%d  %d\n",curCombNum,totalCombNum);
+					minRes=res;
+					rowIndex=row;
 				}
-				if(flag==true)
-					break;
+			}
+			if(minRes<0)
+			{
+				for(int i=0;i<k;i++)
+				{
+					if(combinations[c][i]==false)
+					{
+						newRow[i]=MCA[rowIndex][i];
+					}
+				}
+				vector<int> temp=MCA[rowIndex];
+				MCA[rowIndex]=newRow;
+				updateCIR(1,temp,0,false);
+				updateCIR(2,newRow,0,false);
+				flag=true;
+				//printf("%d  %d\n",curCombNum,totalCombNum);
 			}
 		}
 	}
@@ -530,23 +560,17 @@ void tryAddOneTuple(int c)
 }
 int main()
 {
-	F=2;
-	CR=0.2;
+	//initialize parameters and MCA
 	totalCombNum=0;
 	curCombNum=0;
 	paraCombNum=0;
-	printf("Input parameter t k NP GNUM v1 v2 ... vk:\n");
-	scanf("%d%d%d%d",&t,&k,&NP,&gNum);
+	printf("Input parameter t k p v1 v2 ... vk:\n");
+	scanf("%d%d%d",&t,&k,&p);
 	if(k==1)
 	{
 		printf("error!\n");
 		return 0;
 	}
-	/*int a[4]={0,0,1,1};
-	do
-	{
-		printf("%d%d%d%d",a[0],a[1],a[2],a[3]);
-	}while(next_permutation(a,a+4));*/
 	int* vt=new int[k];
 	for(int i=0;i<k;i++)
 	{
@@ -560,7 +584,6 @@ int main()
 		v.insert(v.begin()+i,temp);
 		vt[i]=temp;
 	}
-	//initialize parameters and MCA
 	for(int i=1;i<k;i++)
 	{
 		for(int j=0;j<i;j++)
@@ -578,14 +601,8 @@ int main()
 	{
 		N=N*vt[i];
 	}
-	LARGE_INTEGER  large_interger;  
-	double dff;  
-	__int64  c1, c2;
-	QueryPerformanceFrequency(&large_interger);  
-	dff = large_interger.QuadPart;  
-	QueryPerformanceCounter(&large_interger);  
-	c1 = large_interger.QuadPart;
 	initMCA();
+	printMCA();
 	genCombs();
 	for(int i=0;i<N;i++)
 	{
@@ -601,47 +618,21 @@ int main()
 	minRowIndex=-1;
 	initCIR();
 	decideCIR();
+	//Simulated Annealing algorithm
+	double T0=4.0,Tt=pow(10,-10),coolingFactor=0.99;
+	int V=N,frozenFactor=11;
+	int L;
 	while(findMCA!=true)
 	{
-		int i=0;
-		initGroup();//initialize group
-		while(i++<gNum)
+		
+		/*int i=0;
+		while(i++<1)
 		{
 			for(int crow=0;crow<NP;crow++)
 			{
 				//mutation
 				vector<int> candidateIn,fCandiIn;
 				srand(time(NULL)+rand());
-				int r1,r2,r3;
-				do
-				{
-					r1=rand()%NP;
-				}while(r1==crow);
-				do
-				{
-					r2=rand()%NP;
-				}while(r2==crow||r2==r1);
-				do
-				{
-					r3=rand()%NP;
-				}while(r3==crow||r3==r1||r3==r2);
-				//float t=exp(1-gNum/(gNum+1-(i+1)));
-				//float f=F*pow(2,t);
-				for(int i=0;i<k;i++)
-				{
-					int temp=abs((int)(group[r1][i]+F*(group[r2][i]-group[r3][i])))%v[i];
-					candidateIn.insert(candidateIn.begin()+i,temp);
-				}
-				//crossover
-				srand(time(NULL)+rand());
-				int jrand=rand()%k;
-				for(int i=0;i<k;i++)
-				{
-					if(rand()%10<(CR*10)||i==jrand)
-						fCandiIn.insert(fCandiIn.begin()+i,candidateIn[i]);
-					else
-						fCandiIn.insert(fCandiIn.begin()+i,group[crow][i]);
-				}
 				//selection
 				//vector<int> fCandiIn=group[crow];
 				int res=fitness(3,fCandiIn)-fitness(2,MCA[minRowIndex]);
@@ -674,16 +665,13 @@ int main()
 				preTotalCombNum=totalCombNum;
 			if(fitness(1,MCA[0])==0)
 			{
-				QueryPerformanceCounter(&large_interger);  
-				c2 = large_interger.QuadPart;
 				printMCA();
-				printf("N=%d ”√ ±%f ms\n",N,(c2 - c1) * 1000 / dff);
 				return 0;
 			}
 		}
 		addOneRow(N);
 		updateCIR(3,MCA[N],N,true);
-		N=N+1;
+		N=N+1;*/
 	}
 	return 0;
 }
