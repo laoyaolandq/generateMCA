@@ -413,10 +413,24 @@ int fitness(int type,vector<int> individual)
 }
 void addOneRow(int rowNum)
 {
-	vector<int> temp;
+	vector<int> firstTry;
 	for(int j=0;j<k;j++)
-		temp.insert(temp.begin()+j,rand()%v[j]);
-	MCA.insert(MCA.begin()+rowNum,temp);
+		firstTry.insert(firstTry.begin()+j,rand()%v[j]);
+	MCA.insert(MCA.begin()+rowNum,firstTry);
+	int maxHDRow=calculateHD(rowNum,firstTry);
+	for(int i=1;i<p;i++)
+	{
+		vector<int> temp;
+		for(int j=0;j<k;j++)
+			temp.insert(temp.begin()+j,rand()%v[j]);
+		int curRowHD=calculateHD(rowNum,temp);
+		if(curRowHD>maxHDRow)
+		{
+			MCA[rowNum]=temp;
+			maxHDRow=curRowHD;
+		}
+	}
+	printf("maxHammingDistance is %d\n",maxHDRow);
 	vector<bool> temp1;
 	for(int j=0;j<paraCombNum;j++)
 	{
@@ -531,7 +545,7 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 				}
 			}
 			int tempp=generateP(c1,minRes+c1,t);
-			if(minRes<curRes||(tempp>rand()%10/10))
+			if(minRes<curRes||(tempp>(rand()%10000)/10000))
 			{
 				for(int i=0;i<k;i++)
 				{
@@ -623,7 +637,7 @@ void tryChangeMij()
 		}
 	}
 	int tempp=generateP(c1,minRes+c1,t);
-	if(minRes<curRes||(tempp>rand()%10000/10000))
+	if(minRes<curRes||(tempp>(rand()%10000)/10000))
 	{
 		newRow[column]=maxColumnv;
 		vector<int> temp=MCA[row];
@@ -697,24 +711,47 @@ int main()
 	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
 	int V=N,frozenFactor=11;
 	int L;
-	int tDecreWOCombNumChange=0;
+	int tDecreWOCombNumChange;
 	T=T0;
 	while(findMCA!=true)
 	{
-		L=N*k*V;
-		for(int i=0;i<L;i++)
+		tDecreWOCombNumChange=0;
+		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 		{
-			int r=rand()%10;
-			if(r<3)
+			L=N*k*V;
+			int preTotalNum=totalCombNum;
+			for(int i=0;i<L;i++)
 			{
-				int c=rand()%paraCombNum;
-				tryAddOneTuple(c);
+				double r=(rand()%10000)/10000;
+				if(r<0.3)
+				{
+					int c=rand()%paraCombNum;
+					tryAddOneTuple(c);
+				}
+				else
+				{
+					tryChangeMij();
+				}
+				if(fitness(1,MCA[0])==0)
+				{
+					printMCA();
+					return 0;
+				}
 			}
+			T=T*coolingFactor;
+			if(preTotalNum==totalCombNum)
+				tDecreWOCombNumChange++;
 			else
-			{
-				tryChangeMij();
-			}
+				tDecreWOCombNumChange=0;
 		}
+		addOneRow(N);
+		updateCIR(3,MCA[N],N,true);
+		if(fitness(1,MCA[0])==0)
+		{
+			printMCA();
+			return 0;
+		}
+		N=N+1;
 	}
 		/*int i=0;
 		while(i++<1)
