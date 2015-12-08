@@ -11,7 +11,8 @@ using namespace std;
 bool findMCA;
 int p;
 int t,N,k,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
-int NP;
+int T;
+int existCombNum;
 vector<vector<int>> MCA;
 vector<vector<bool>> combinations;
 vector<vector<string>> combInRow;
@@ -441,6 +442,10 @@ void printMCA()
 		printf("\n");
 	}
 }
+double generateP(int c1,int c2,int t)
+{
+	return exp((c1-c2)/t);
+}
 void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 {
 	if(flag==true)
@@ -503,7 +508,9 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 		hash_map<string, int>::iterator iter=G.find(comb);
 		if(iter==G.end())
 		{
-			int rowIndex,minRes=0;
+			int rowIndex,curRes=0,minRes=100000000;
+			int c1=fitness(2,MCA[0]);
+			int c2;
 			for(int row=0;row<N;row++)
 			{
 				minCombRow=combNumInRow[row];
@@ -515,14 +522,16 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 						newRow[i]=MCA[row][i];
 					}
 				}
-				int res=fitness(3,newRow)-fitness(2,MCA[row]);
+				c2=fitness(3,newRow);
+				int res=c2-c1;
 				if(res<minRes)
 				{
 					minRes=res;
 					rowIndex=row;
 				}
 			}
-			if(minRes<0)
+			int tempp=generateP(c1,minRes+c1,t);
+			if(minRes<curRes||(tempp>rand()%10/10))
 			{
 				for(int i=0;i<k;i++)
 				{
@@ -539,6 +548,10 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 				//printf("%d  %d\n",curCombNum,totalCombNum);
 			}
 		}
+		else
+		{
+			existCombNum++;
+		}
 	}
 	return;
 }
@@ -554,9 +567,71 @@ void tryAddOneTuple(int c)
 			j--;
 		}
 	}
+	int totalComb=1;
+	for(int i=0;i<t;i++)
+	{
+		totalComb=totalComb*vNum[i];
+	}
 	bool flag=false;
 	dfs(curComb,vNum,0,c,flag);
+	while(existCombNum==totalComb||fitness(1,MCA[0])!=0)
+	{
+		c=(c+1)%paraCombNum;
+		existCombNum=0;
+		for(int i=k-1,j=t-1;i>=0;i--)
+		{
+			if(combinations[c][i]==true)
+			{
+				vNum[j]=v[i];
+				j--;
+			}
+		}
+		int totalComb=1;
+		for(int i=0;i<t;i++)
+		{
+			totalComb=totalComb*vNum[i];
+		}
+		bool flag=false;
+		dfs(curComb,vNum,0,c,flag);
+	}
 	return;
+}
+void tryChangeMij()
+{
+	int row=rand()%N;
+	int column=rand()%k;
+	int curMij=MCA[row][column];
+	vector<int> newRow=MCA[row];
+	int curRes=0,minRes=100000000;
+	int maxColumnv=curMij;
+	int c1=fitness(2,MCA[0]);
+	int c2;
+	for(int i=0;i<v[column];i++)
+	{
+		if(i!=curMij)
+		{
+			minCombRow=combNumInRow[row];
+			minRowIndex=row;
+			newRow[column]=i;
+			c2=fitness(3,newRow);
+			int res=c2-c1;
+			if(res<minRes)
+			{
+				minRes=res;
+				maxColumnv=i;
+			}
+		}
+	}
+	int tempp=generateP(c1,minRes+c1,t);
+	if(minRes<curRes||(tempp>rand()%10000/10000))
+	{
+		newRow[column]=maxColumnv;
+		vector<int> temp=MCA[row];
+		MCA[row]=newRow;
+		updateCIR(1,temp,0,false);
+		updateCIR(2,newRow,0,false);
+		//printf("%d  %d\n",curCombNum,totalCombNum);
+	}
 }
 int main()
 {
@@ -619,12 +694,28 @@ int main()
 	initCIR();
 	decideCIR();
 	//Simulated Annealing algorithm
-	double T0=4.0,Tt=pow(10,-10),coolingFactor=0.99;
+	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
 	int V=N,frozenFactor=11;
 	int L;
+	int tDecreWOCombNumChange=0;
+	T=T0;
 	while(findMCA!=true)
 	{
-		
+		L=N*k*V;
+		for(int i=0;i<L;i++)
+		{
+			int r=rand()%10;
+			if(r<3)
+			{
+				int c=rand()%paraCombNum;
+				tryAddOneTuple(c);
+			}
+			else
+			{
+				tryChangeMij();
+			}
+		}
+	}
 		/*int i=0;
 		while(i++<1)
 		{
@@ -672,6 +763,5 @@ int main()
 		addOneRow(N);
 		updateCIR(3,MCA[N],N,true);
 		N=N+1;*/
-	}
 	return 0;
 }
