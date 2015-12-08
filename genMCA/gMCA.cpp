@@ -11,7 +11,7 @@ using namespace std;
 bool findMCA;
 int p;
 int t,N,k,paraCombNum,curCombNum,totalCombNum,minCombRow,minRowIndex;
-int T;
+double T;
 int existCombNum;
 vector<vector<int>> MCA;
 vector<vector<bool>> combinations;
@@ -61,7 +61,7 @@ void initMCA()
 				maxHDRow=curRowHD;
 			}
 		}
-		printf("maxHammingDistance is %d\n",maxHDRow);
+		//printf("maxHammingDistance is %d\n",maxHDRow);
 	}
 }
 void genCombs()
@@ -430,7 +430,7 @@ void addOneRow(int rowNum)
 			maxHDRow=curRowHD;
 		}
 	}
-	printf("maxHammingDistance is %d\n",maxHDRow);
+	//printf("maxHammingDistance is %d\n",maxHDRow);
 	vector<bool> temp1;
 	for(int j=0;j<paraCombNum;j++)
 	{
@@ -455,6 +455,7 @@ void printMCA()
 		}
 		printf("\n");
 	}
+	printf("%d\n",N);
 }
 double generateP(int c1,int c2,int t)
 {
@@ -545,7 +546,7 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 				}
 			}
 			int tempp=generateP(c1,minRes+c1,t);
-			if(minRes<curRes||(tempp>(rand()%10000)/10000))
+			if(minRes<curRes||(tempp>(double)(rand()%10000)/10000.0))
 			{
 				for(int i=0;i<k;i++)
 				{
@@ -587,11 +588,11 @@ void tryAddOneTuple(int c)
 		totalComb=totalComb*vNum[i];
 	}
 	bool flag=false;
+	existCombNum=0;
 	dfs(curComb,vNum,0,c,flag);
-	while(existCombNum==totalComb||fitness(1,MCA[0])!=0)
+	while(existCombNum==totalComb&&fitness(1,MCA[0])!=0)
 	{
 		c=(c+1)%paraCombNum;
-		existCombNum=0;
 		for(int i=k-1,j=t-1;i>=0;i--)
 		{
 			if(combinations[c][i]==true)
@@ -606,6 +607,7 @@ void tryAddOneTuple(int c)
 			totalComb=totalComb*vNum[i];
 		}
 		bool flag=false;
+		existCombNum=0;
 		dfs(curComb,vNum,0,c,flag);
 	}
 	return;
@@ -637,7 +639,7 @@ void tryChangeMij()
 		}
 	}
 	int tempp=generateP(c1,minRes+c1,t);
-	if(minRes<curRes||(tempp>(rand()%10000)/10000))
+	if(minRes<curRes||(tempp>((double)(rand()%10000))/10000.0))
 	{
 		newRow[column]=maxColumnv;
 		vector<int> temp=MCA[row];
@@ -691,7 +693,7 @@ int main()
 		N=N*vt[i];
 	}
 	initMCA();
-	printMCA();
+	//printMCA();
 	genCombs();
 	for(int i=0;i<N;i++)
 	{
@@ -716,13 +718,13 @@ int main()
 	while(findMCA!=true)
 	{
 		tDecreWOCombNumChange=0;
+		int preCurNum=curCombNum;
 		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 		{
 			L=N*k*V;
-			int preTotalNum=totalCombNum;
 			for(int i=0;i<L;i++)
 			{
-				double r=(rand()%10000)/10000;
+				double r=((double)(rand()%10000))/10000.0;
 				if(r<0.3)
 				{
 					int c=rand()%paraCombNum;
@@ -739,7 +741,7 @@ int main()
 				}
 			}
 			T=T*coolingFactor;
-			if(preTotalNum==totalCombNum)
+			if(curCombNum<=preCurNum)
 				tDecreWOCombNumChange++;
 			else
 				tDecreWOCombNumChange=0;
