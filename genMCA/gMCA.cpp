@@ -158,6 +158,8 @@ void initCIR()
 }
 void decideCIR()
 {
+	minCombRow=paraCombNum;
+	minRowIndex=-1;
 	for(int row=0;row<N;row++)
 	{
 		int tempMinCombRow=0; 
@@ -225,9 +227,16 @@ int countT(vector<bool> w)
 			count++;
 	return count;
 }
-void updateCIR(int type,vector<int> row,int rowNum,bool ifNeed)// type=1 erase old row,=2 replace old row,=3 add new row
+void updateCIR(int type,vector<int> row,int curRowNum,int rowNum,bool ifNeed)// type=1 erase old row,=2 replace old row,=3 add new row;curRowNum is the parameter row's num,rowNum is new row's num
 {
-	combNumInRow[minRowIndex]=0;
+	if(type==1)
+	{
+		combNumInRow[curRowNum]=0;
+	}
+	else if(type==3)
+	{
+		combNumInRow[rowNum]=0;
+	}
 	for(int c=0;c<paraCombNum;c++)
 	{
 		string comb;
@@ -274,7 +283,7 @@ void updateCIR(int type,vector<int> row,int rowNum,bool ifNeed)// type=1 erase o
 				{
 					for(int i=0;i<N;i++)
 					{
-						if(combInRow[i][c]==comb&&i!=minRowIndex)
+						if(combInRow[i][c]==comb&&i!=curRowNum)
 						{
 							combWhetherUnique[i][c]=true;
 							combNumInRow[i]++;
@@ -286,23 +295,23 @@ void updateCIR(int type,vector<int> row,int rowNum,bool ifNeed)// type=1 erase o
 		}
 		else if(type==2)
 		{
-			combInRow[minRowIndex][c]=comb;
+			combInRow[curRowNum][c]=comb;
 			if(G.find(comb)==G.end())
 			{
 				G.insert(make_pair(comb,1));
 				curCombNum++;
-				combWhetherUnique[minRowIndex][c]=true;
-				combNumInRow[minRowIndex]++;
+				combWhetherUnique[curRowNum][c]=true;
+				combNumInRow[curRowNum]++;
 			}
 			else
 			{
 				G[comb]++;
-				combWhetherUnique[minRowIndex][c]=false;
+				combWhetherUnique[curRowNum][c]=false;
 				if(G[comb]==2)
 				{
 					for(int i=0;i<N;i++)
 					{
-						if(combInRow[i][c]==comb&&i!=minRowIndex)
+						if(combInRow[i][c]==comb&&i!=curRowNum)
 						{
 							combWhetherUnique[i][c]=false;
 							combNumInRow[i]--;
@@ -330,7 +339,7 @@ void updateCIR(int type,vector<int> row,int rowNum,bool ifNeed)// type=1 erase o
 				{
 					for(int i=0;i<N;i++)
 					{
-						if(combInRow[i][c]==comb&&i!=rowNum)
+						if(combInRow[i][c]==comb)
 						{
 							combWhetherUnique[i][c]=false;
 							combNumInRow[i]--;
@@ -352,25 +361,17 @@ void updateCIR(int type,vector<int> row,int rowNum,bool ifNeed)// type=1 erase o
 			minCombRow=temp;
 			minRowIndex=i;
 		}
-		/*int temp=countT(combWhetherUnique[i]);
-		combNumInRow[i]=temp;
-		if(temp<minCombRow)
-		{
-			minCombRow=temp;
-			minRowIndex=i;
-		}*/
 	}
 }
-int fitness(int type,vector<int> individual)
+int fitness(int type,int oldRowIndex,vector<int> individual)//type=1 judge if we get a MCA,=2 the fitness with the old row,=3 the fitness after replace the old row with the new row
 {
-	int missedCom=totalCombNum-curCombNum;
 	if(type==1||type==2)
 	{
-		return missedCom;
+		return totalCombNum-curCombNum;
 	}
 	else
 	{
-		int incresedComb=0; 
+		int incresedComb=0,uniqueInOldRow=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
 			string comb;
@@ -403,12 +404,12 @@ int fitness(int type,vector<int> individual)
 					}while(tempV!=0);
 				}
 			}
-			if(G.find(comb)==G.end()||(combInRow[minRowIndex][c]==comb&&combWhetherUnique[minRowIndex][c]==true))
+			if(G.find(comb)==G.end()||(combInRow[oldRowIndex][c]==comb&&combWhetherUnique[oldRowIndex][c]==true))
 			{
 				incresedComb++;
 			}
 		}
-		return totalCombNum-(curCombNum-minCombRow)-incresedComb;
+		return totalCombNum-(curCombNum-combNumInRow[oldRowIndex])-incresedComb;
 	}
 }
 void addOneRow(int rowNum)
@@ -430,7 +431,6 @@ void addOneRow(int rowNum)
 			maxHDRow=curRowHD;
 		}
 	}
-	//printf("maxHammingDistance is %d\n",maxHDRow);
 	vector<bool> temp1;
 	for(int j=0;j<paraCombNum;j++)
 	{
@@ -457,9 +457,9 @@ void printMCA()
 	}
 	printf("%d\n",N);
 }
-double generateP(int c1,int c2,int t)
+double generateP(int c1,int c2,int T)
 {
-	return exp((c1-c2)/t);
+	return exp(((double)(c1-c2))/((double)T));
 }
 void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 {
@@ -524,12 +524,10 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 		if(iter==G.end())
 		{
 			int rowIndex,curRes=0,minRes=100000000;
-			int c1=fitness(2,MCA[0]);
+			int c1=fitness(2,0,MCA[0]);
 			int c2;
 			for(int row=0;row<N;row++)
 			{
-				minCombRow=combNumInRow[row];
-				minRowIndex=row;
 				for(int i=0;i<k;i++)
 				{
 					if(combinations[c][i]==false)
@@ -537,7 +535,7 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 						newRow[i]=MCA[row][i];
 					}
 				}
-				c2=fitness(3,newRow);
+				c2=fitness(3,row,newRow);
 				int res=c2-c1;
 				if(res<minRes)
 				{
@@ -545,7 +543,7 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 					rowIndex=row;
 				}
 			}
-			int tempp=generateP(c1,minRes+c1,t);
+			double tempp=generateP(c1,minRes+c1,T);
 			if(minRes<curRes||(tempp>(double)(rand()%10000)/10000.0))
 			{
 				for(int i=0;i<k;i++)
@@ -557,10 +555,9 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 				}
 				vector<int> temp=MCA[rowIndex];
 				MCA[rowIndex]=newRow;
-				updateCIR(1,temp,0,false);
-				updateCIR(2,newRow,0,false);
+				updateCIR(1,temp,rowIndex,0,false);
+				updateCIR(2,newRow,rowIndex,0,false);
 				flag=true;
-				//printf("%d  %d\n",curCombNum,totalCombNum);
 			}
 		}
 		else
@@ -590,7 +587,7 @@ void tryAddOneTuple(int c)
 	bool flag=false;
 	existCombNum=0;
 	dfs(curComb,vNum,0,c,flag);
-	while(existCombNum==totalComb&&fitness(1,MCA[0])!=0)
+	while(existCombNum==totalComb&&fitness(1,0,MCA[0])!=0)
 	{
 		c=(c+1)%paraCombNum;
 		for(int i=k-1,j=t-1;i>=0;i--)
@@ -620,16 +617,14 @@ void tryChangeMij()
 	vector<int> newRow=MCA[row];
 	int curRes=0,minRes=100000000;
 	int maxColumnv=curMij;
-	int c1=fitness(2,MCA[0]);
+	int c1=fitness(2,row,MCA[0]);
 	int c2;
 	for(int i=0;i<v[column];i++)
 	{
 		if(i!=curMij)
 		{
-			minCombRow=combNumInRow[row];
-			minRowIndex=row;
 			newRow[column]=i;
-			c2=fitness(3,newRow);
+			c2=fitness(3,row,newRow);
 			int res=c2-c1;
 			if(res<minRes)
 			{
@@ -638,15 +633,14 @@ void tryChangeMij()
 			}
 		}
 	}
-	int tempp=generateP(c1,minRes+c1,t);
+	int tempp=generateP(c1,minRes+c1,T);
 	if(minRes<curRes||(tempp>((double)(rand()%10000))/10000.0))
 	{
 		newRow[column]=maxColumnv;
 		vector<int> temp=MCA[row];
 		MCA[row]=newRow;
-		updateCIR(1,temp,0,false);
-		updateCIR(2,newRow,0,false);
-		//printf("%d  %d\n",curCombNum,totalCombNum);
+		updateCIR(1,temp,row,0,false);
+		updateCIR(2,newRow,row,0,false);
 	}
 }
 int main()
@@ -693,20 +687,17 @@ int main()
 		N=N*vt[i];
 	}
 	initMCA();
-	//printMCA();
 	genCombs();
 	for(int i=0;i<N;i++)
 	{
 		addCombToG(MCA[i]);
 	}
-	if(fitness(1,MCA[0])==0)
+	if(fitness(1,0,MCA[0])==0)
 	{
 		printMCA();
 		return 0;
 	}
 	findMCA=false;
-	minCombRow=paraCombNum;
-	minRowIndex=-1;
 	initCIR();
 	decideCIR();
 	//Simulated Annealing algorithm
@@ -718,10 +709,11 @@ int main()
 	while(findMCA!=true)
 	{
 		tDecreWOCombNumChange=0;
-		int preCurNum=curCombNum;
+		int bestSFCurNum=curCombNum;
+		int storeCurNum=curCombNum;
 		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 		{
-			L=N*k*V;
+			L=N*k*V*V;
 			for(int i=0;i<L;i++)
 			{
 				double r=((double)(rand()%10000))/10000.0;
@@ -734,73 +726,33 @@ int main()
 				{
 					tryChangeMij();
 				}
-				if(fitness(1,MCA[0])==0)
+				if(fitness(1,0,MCA[0])==0)
 				{
 					printMCA();
 					return 0;
 				}
+				else
+				{
+					if(curCombNum>bestSFCurNum)
+					{
+						bestSFCurNum=curCombNum;
+					}
+				}
 			}
 			T=T*coolingFactor;
-			if(curCombNum<=preCurNum)
+			if(bestSFCurNum==storeCurNum)
 				tDecreWOCombNumChange++;
 			else
 				tDecreWOCombNumChange=0;
 		}
 		addOneRow(N);
-		updateCIR(3,MCA[N],N,true);
-		if(fitness(1,MCA[0])==0)
+		updateCIR(3,MCA[N],0,N,true);
+		if(fitness(1,0,MCA[0])==0)
 		{
 			printMCA();
 			return 0;
 		}
 		N=N+1;
 	}
-		/*int i=0;
-		while(i++<1)
-		{
-			for(int crow=0;crow<NP;crow++)
-			{
-				//mutation
-				vector<int> candidateIn,fCandiIn;
-				srand(time(NULL)+rand());
-				//selection
-				//vector<int> fCandiIn=group[crow];
-				int res=fitness(3,fCandiIn)-fitness(2,MCA[minRowIndex]);
-				if(res<0||(res==0&&MCA[minRowIndex]!=fCandiIn))
-				{
-					vector<int> temp=MCA[minRowIndex];
-					MCA[minRowIndex]=fCandiIn;
-					updateCIR(1,temp,0,true);
-					updateCIR(2,fCandiIn,0,true);
-				}
-				if(fitness(1,MCA[0])==0)
-				{
-					QueryPerformanceCounter(&large_interger);  
-					c2 = large_interger.QuadPart;
-					printMCA();
-					printf("N=%d ”√ ±%f ms\n",N,(c2 - c1) * 1000 / dff);
-					return 0;
-				}
-			}
-		}
-		int count=0,maxCount=2*N,preTotalCombNum=totalCombNum;
-		while(count<maxCount)
-		{
-			//int rrow=rand()%paraCombNum;
-			for(int rrow=0;rrow<paraCombNum;rrow++)
-			tryAddOneTuple(rrow);
-			if(preTotalCombNum==totalCombNum)
-				count++;
-			else
-				preTotalCombNum=totalCombNum;
-			if(fitness(1,MCA[0])==0)
-			{
-				printMCA();
-				return 0;
-			}
-		}
-		addOneRow(N);
-		updateCIR(3,MCA[N],N,true);
-		N=N+1;*/
 	return 0;
 }
