@@ -353,7 +353,10 @@ void updateCIR(int type,vector<int> row,int curRowNum,int rowNum,bool ifNeed)// 
 	if(ifNeed==false)
 		return;
 	minCombRow=paraCombNum;
-	for(int i=0;i<N;i++)
+	int r=N;
+	if(type==3)
+		r=r+1;
+	for(int i=0;i<r;i++)
 	{
 		int temp=combNumInRow[i];
 		if(temp<minCombRow)
@@ -371,7 +374,7 @@ int fitness(int type,int oldRowIndex,vector<int> individual)//type=1 judge if we
 	}
 	else
 	{
-		int incresedComb=0,uniqueInOldRow=0; 
+		int incresedComb=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
 			string comb;
@@ -455,7 +458,7 @@ void printMCA()
 		}
 		printf("\n");
 	}
-	printf("%d\n",N);
+	printf("totalCombNum is %d,N is %d.\n",totalCombNum,N);
 }
 double generateP(int c1,int c2,int T)
 {
@@ -472,7 +475,7 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 			curComb[dep]=i;
 			dfs(curComb,vNum,dep+1,c,flag);
 			if(flag==true)
-				break;
+				return;
 		}
 	}
 	else
@@ -643,6 +646,18 @@ void tryChangeMij()
 		updateCIR(2,newRow,row,0,false);
 	}
 }
+void verifyMCA()
+{
+	G.clear();
+	for(int i=0;i<N;i++)
+	{
+		addCombToG(MCA[i]);
+	}
+	if(G.size()==totalCombNum)
+		printf("The answer is correct!\n");
+	else
+		printf("The answer is wrong!\n");
+}
 int main()
 {
 	//initialize parameters and MCA
@@ -695,6 +710,7 @@ int main()
 	if(fitness(1,0,MCA[0])==0)
 	{
 		printMCA();
+		verifyMCA();
 		return 0;
 	}
 	findMCA=false;
@@ -710,10 +726,12 @@ int main()
 	{
 		tDecreWOCombNumChange=0;
 		int bestSFCurNum=curCombNum;
-		int storeCurNum=curCombNum;
 		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 		{
-			L=N*k*V*V;
+			//L=N*k*V*V;
+			L=N*k*V;
+			int storeCurNum=bestSFCurNum;
+			//int count=0,l=N*k*V;
 			for(int i=0;i<L;i++)
 			{
 				double r=((double)(rand()%10000))/10000.0;
@@ -729,6 +747,7 @@ int main()
 				if(fitness(1,0,MCA[0])==0)
 				{
 					printMCA();
+					verifyMCA();
 					return 0;
 				}
 				else
@@ -737,6 +756,12 @@ int main()
 					{
 						bestSFCurNum=curCombNum;
 					}
+					/*else
+					{
+						count++;
+					}
+					if(count>l)
+						break;*/
 				}
 			}
 			T=T*coolingFactor;
@@ -747,12 +772,13 @@ int main()
 		}
 		addOneRow(N);
 		updateCIR(3,MCA[N],0,N,true);
+		N=N+1;
 		if(fitness(1,0,MCA[0])==0)
 		{
 			printMCA();
+			verifyMCA();
 			return 0;
 		}
-		N=N+1;
 	}
 	return 0;
 }
