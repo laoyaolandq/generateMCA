@@ -735,14 +735,14 @@ int main()
 			for(int i=0;i<L;i++)
 			{
 				double r=((double)(rand()%10000))/10000.0;
-				if(r<0.3)
+				if(r<0.7)
 				{
-					int c=rand()%paraCombNum;
-					tryAddOneTuple(c);
+					tryChangeMij();
 				}
 				else
 				{
-					tryChangeMij();
+					int c=rand()%paraCombNum;
+					tryAddOneTuple(c);
 				}
 				if(fitness(1,0,MCA[0])==0)
 				{
