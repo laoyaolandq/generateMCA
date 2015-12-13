@@ -6,7 +6,6 @@
 #include<math.h>
 #include<algorithm>
 #include<windows.h>
-#include<StringAsKey.h>
 using namespace std;
 bool findMCA;
 int p;
@@ -20,11 +19,19 @@ vector<int> combNumInRow;
 vector<vector<bool>> combWhetherUnique;
 vector<int> v;
 
-//combIndex need to be updated when add one row,key's = operator need reload?
-
 class key
 {
 public:
+	key(vector<int> row,int* index,int p2)
+	{
+		value=new int[t];
+		for(int i=0;i<t;i++)
+		{
+			value[i]=row[index[i]];
+		}
+		paraNum=p2;
+	}
+
 	key(int* p1,int p2)
 	{
 		value=new int[t];
@@ -35,11 +42,27 @@ public:
 		paraNum=p2;
 	}
 
+	bool operator == (const key& v1)
+	{
+		if(v1.paraNum!=paraNum)
+			return false;
+		else
+		{
+			for(int i=0;i<t;i++)
+			{
+				if(v1.value[i]!=value[i])
+					return false;
+			}
+			return true;
+		}
+	}
+
 	int* value;
 	int paraNum;
 };
 class hash_class
 {
+public:
 	size_t operator() (const key& k) const
     {
 		int hashcode=k.value[0];
@@ -50,6 +73,7 @@ class hash_class
 };
 class equal_class
 {
+public:
 	bool operator() (const key& v1,const key& v2) const
 	{
 		if(v1.paraNum!=v2.paraNum)
@@ -157,12 +181,7 @@ void addCombToG(vector<int> newRow)
 {
 	for(int c=0;c<paraCombNum;c++)
 	{
-		int* p=new int[t];
-		for(int i=0;i<t;i++)
-		{
-			p[i]=newRow[combIndex[c][i]];
-		}
-		key comb=key(p,c);
+		key comb=key(newRow,combIndex[c],c);
 		if(G.find(comb)==G.end())
 		{
 			G.insert(make_pair(comb,1));
@@ -183,10 +202,9 @@ void initCIR()
 		}
 		combWhetherUnique.insert(combWhetherUnique.begin()+i,temp1);
 		vector<key> temp2;
-		int* p;
 		for(int j=0;j<paraCombNum;j++)
 		{
-			temp2.insert(temp2.begin()+j,key(p,-1));
+			temp2.insert(temp2.begin()+j,key(MCA[0],combIndex[0],-1));
 		}
 		combInRow.insert(combInRow.begin()+i,temp2);
 		combNumInRow.insert(combNumInRow.begin()+i,0);
@@ -201,12 +219,7 @@ void decideCIR()
 		int tempMinCombRow=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
-			int* p=new int[t];
-			for(int i=0;i<t;i++)
-			{
-				p[i]=MCA[row][combIndex[c][i]];
-			}
-			key comb=key(p,c);
+			key comb=key(MCA[row],combIndex[c],c);
 			if(G.find(comb)!=G.end())
 			{
 				combInRow[row][c]=comb;
@@ -249,36 +262,7 @@ void updateCIR(int type,vector<int> row,int curRowNum,int rowNum,bool ifNeed)// 
 	}
 	for(int c=0;c<paraCombNum;c++)
 	{
-		string comb;
-		int curIndex=0;
-		for(int i=k-1;i>=0;i--)
-		{
-			if(combinations[c][i]==false)
-			{
-				int tempV,zeroNum=0;
-				tempV=v[i]-1;
-				do
-				{
-					zeroNum++;
-					tempV=tempV/10;
-				}while(tempV!=0);
-				comb.insert(curIndex,zeroNum,'x');
-				curIndex+=zeroNum;
-			}
-			else
-			{
-				int tempV,tempMij;
-				tempV=v[i]-1;
-				tempMij=row[i];
-				do
-				{
-					tempV=tempV/10;
-					int temp=tempMij%10;
-					comb.insert(curIndex++,1,(char)(temp+48));
-					tempMij=tempMij/10;
-				}while(tempV!=0);
-			}
-		}
+		key comb=key(row,combIndex[c],c);
 		if(type==1)
 		{
 			if(G[comb]==1)
@@ -387,36 +371,7 @@ int fitness(int type,int oldRowIndex,vector<int> individual)//type=1 judge if we
 		int incresedComb=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
-			string comb;
-			int curIndex=0;
-			for(int i=k-1;i>=0;i--)
-			{
-				if(combinations[c][i]==false)
-				{
-					int tempV,zeroNum=0;
-					tempV=v[i]-1;
-					do
-					{
-						zeroNum++;
-						tempV=tempV/10;
-					}while(tempV!=0);
-					comb.insert(curIndex,zeroNum,'x');
-					curIndex+=zeroNum;
-				}
-				else
-				{
-					int tempV,tempMij;
-					tempV=v[i]-1;
-					tempMij=individual[i];
-					do
-					{
-						tempV=tempV/10;
-						int temp=tempMij%10;
-						comb.insert(curIndex++,1,(char)(temp+48));
-						tempMij=tempMij/10;
-					}while(tempV!=0);
-				}
-			}
+			key comb=key(individual,combIndex[c],c);
 			if(G.find(comb)==G.end()||(combInRow[oldRowIndex][c]==comb&&combWhetherUnique[oldRowIndex][c]==true))
 			{
 				incresedComb++;
@@ -450,10 +405,10 @@ void addOneRow(int rowNum)
 		temp1.insert(temp1.begin()+j,false);
 	}
 	combWhetherUnique.insert(combWhetherUnique.begin()+rowNum,temp1);
-	vector<string> temp2;
+	vector<key> temp2;
 	for(int j=0;j<paraCombNum;j++)
 	{
-		temp2.insert(temp2.begin()+j,"");
+		temp2.insert(temp2.begin()+j,key(MCA[0],combIndex[0],-1));
 	}
 	combInRow.insert(combInRow.begin()+rowNum,temp2);
 	combNumInRow.insert(combNumInRow.begin()+rowNum,0);
@@ -474,7 +429,7 @@ double generateP(int c1,int c2,int T)
 {
 	return exp(((double)(c1-c2))/((double)T));
 }
-void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
+void dfs(vector<int> newRow,int* curComb,int* vNum,int dep,int c,bool& flag)
 {
 	if(flag==true)
 		return;
@@ -483,59 +438,20 @@ void dfs(int* curComb,int* vNum,int dep,int c,bool& flag)
 		for(int i=0;i<vNum[dep];i++)
 		{
 			curComb[dep]=i;
-			dfs(curComb,vNum,dep+1,c,flag);
+			dfs(newRow,curComb,vNum,dep+1,c,flag);
 			if(flag==true)
 				return;
 		}
 	}
 	else
 	{
-		vector<int> newRow;
-		for(int i=0,j=0;i<k;i++)
+		key comb=key(curComb,c);
+		if(G.find(comb)==G.end())
 		{
-			if(combinations[c][i]==true)
+			for(int i=0;i<t;i++)
 			{
-				newRow.insert(newRow.begin()+i,curComb[j]);
-				j++;
+				newRow[combIndex[c][i]]=curComb[i];
 			}
-			else
-			{
-				newRow.insert(newRow.begin()+i,0);
-			}
-		}
-		string comb;
-		int curIndex=0;
-		for(int i=k-1;i>=0;i--)
-		{
-			if(combinations[c][i]==false)
-			{
-				int tempV,zeroNum=0;
-				tempV=v[i]-1;
-				do
-				{
-					zeroNum++;
-					tempV=tempV/10;
-				}while(tempV!=0);
-				comb.insert(curIndex,zeroNum,'x');
-				curIndex+=zeroNum;
-			}
-			else
-			{
-				int tempV,tempMij;
-				tempV=v[i]-1;
-				tempMij=newRow[i];
-				do
-				{
-					tempV=tempV/10;
-					int temp=tempMij%10;
-					comb.insert(curIndex++,1,(char)(temp+48));
-					tempMij=tempMij/10;
-				}while(tempV!=0);
-			}
-		}
-		hash_map<string, int>::iterator iter=G.find(comb);
-		if(iter==G.end())
-		{
 			int rowIndex,curRes=0,minRes=100000000;
 			int c1=fitness(2,0,MCA[0]);
 			int c2;
@@ -584,41 +500,32 @@ void tryAddOneTuple(int c)
 {
 	int* curComb=new int[t];
 	int* vNum=new int[t];
-	for(int i=k-1,j=t-1;i>=0;i--)
-	{
-		if(combinations[c][i]==true)
-		{
-			vNum[j]=v[i];
-			j--;
-		}
-	}
 	int totalComb=1;
 	for(int i=0;i<t;i++)
 	{
+		vNum[i]=v[combIndex[c][i]];
 		totalComb=totalComb*vNum[i];
 	}
 	bool flag=false;
 	existCombNum=0;
-	dfs(curComb,vNum,0,c,flag);
+	vector<int> newRow;
+	for(int i=0;i<k;i++)
+	{
+		newRow.insert(newRow.begin()+i,0);
+	}
+	dfs(newRow,curComb,vNum,0,c,flag);
 	while(existCombNum==totalComb&&fitness(1,0,MCA[0])!=0)
 	{
 		c=(c+1)%paraCombNum;
-		for(int i=k-1,j=t-1;i>=0;i--)
-		{
-			if(combinations[c][i]==true)
-			{
-				vNum[j]=v[i];
-				j--;
-			}
-		}
 		int totalComb=1;
 		for(int i=0;i<t;i++)
 		{
+			vNum[i]=v[combIndex[c][i]];
 			totalComb=totalComb*vNum[i];
 		}
 		bool flag=false;
 		existCombNum=0;
-		dfs(curComb,vNum,0,c,flag);
+		dfs(newRow,curComb,vNum,0,c,flag);
 	}
 	return;
 }
