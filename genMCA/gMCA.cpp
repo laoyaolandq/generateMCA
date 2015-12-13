@@ -1,5 +1,5 @@
 #include<iostream>
-#include<hash_map>
+#include<unordered_map>
 #include<vector>
 #include<stdlib.h>
 #include<time.h>
@@ -15,11 +15,60 @@ double T;
 int existCombNum;
 vector<vector<int>> MCA;
 vector<vector<bool>> combinations;
-vector<vector<string>> combInRow;
+vector<int*> combIndex;
 vector<int> combNumInRow;
 vector<vector<bool>> combWhetherUnique;
 vector<int> v;
-hash_map <string,int> G;
+
+//combIndex need to be updated when add one row,key's = operator need reload?
+
+class key
+{
+public:
+	key(int* p1,int p2)
+	{
+		value=new int[t];
+		for(int i=0;i<t;i++)
+		{
+			value[i]=p1[i];
+		}
+		paraNum=p2;
+	}
+
+	int* value;
+	int paraNum;
+};
+class hash_class
+{
+	size_t operator() (const key& k) const
+    {
+		int hashcode=k.value[0];
+		for(int i=1;i<t;i++)
+			hashcode=hashcode*v[i]+k.value[i];
+		return hashcode;
+    }
+};
+class equal_class
+{
+	bool operator() (const key& v1,const key& v2) const
+	{
+		if(v1.paraNum!=v2.paraNum)
+			return false;
+		else
+		{
+			for(int i=0;i<t;i++)
+			{
+				if(v1.value[i]!=v2.value[i])
+					return false;
+			}
+			return true;
+		}
+	}
+};
+
+vector<vector<key>> combInRow;
+unordered_map <key,int,hash_class,equal_class> G;
+
 int calculateHD(int row,vector<int> curCandidateRow)
 {
 	int hmDistance=0;
@@ -64,6 +113,15 @@ void initMCA()
 		//printf("maxHammingDistance is %d\n",maxHDRow);
 	}
 }
+void getCombIndex(int c,int* p)
+{
+	int* index=new int[t];
+	for(int i=0;i<t;i++)
+	{
+		index[i]=p[i];
+	}
+	combIndex.insert(combIndex.begin()+c,index);
+}
 void genCombs()
 {
 	int* perIndex=new int[k];
@@ -91,6 +149,7 @@ void genCombs()
 		}
 		totalCombNum+=tempCombNum;
 		combinations.insert(combinations.begin()+paraCombNum,temp);
+		getCombIndex(paraCombNum,perIndex);
 		paraCombNum++;
 	}while(next_permutation(perIndex,perIndex+k));
 }
@@ -98,36 +157,12 @@ void addCombToG(vector<int> newRow)
 {
 	for(int c=0;c<paraCombNum;c++)
 	{
-		string comb;
-		int curIndex=0;
-		for(int i=k-1;i>=0;i--)
+		int* p=new int[t];
+		for(int i=0;i<t;i++)
 		{
-			if(combinations[c][i]==false)
-			{
-				int tempV,zeroNum=0;
-				tempV=v[i]-1;
-				do
-				{
-					zeroNum++;
-					tempV=tempV/10;
-				}while(tempV!=0);
-				comb.insert(curIndex,zeroNum,'x');
-				curIndex+=zeroNum;
-			}
-			else
-			{
-				int tempV,tempMij;
-				tempV=v[i]-1;
-				tempMij=newRow[i];
-				do
-				{
-					tempV=tempV/10;
-					int temp=tempMij%10;
-					comb.insert(curIndex++,1,(char)(temp+48));
-					tempMij=tempMij/10;
-				}while(tempV!=0);
-			}
+			p[i]=newRow[combIndex[c][i]];
 		}
+		key comb=key(p,c);
 		if(G.find(comb)==G.end())
 		{
 			G.insert(make_pair(comb,1));
@@ -147,10 +182,11 @@ void initCIR()
 			temp1.insert(temp1.begin()+j,false);
 		}
 		combWhetherUnique.insert(combWhetherUnique.begin()+i,temp1);
-		vector<string> temp2;
+		vector<key> temp2;
+		int* p;
 		for(int j=0;j<paraCombNum;j++)
 		{
-			temp2.insert(temp2.begin()+j,"");
+			temp2.insert(temp2.begin()+j,key(p,-1));
 		}
 		combInRow.insert(combInRow.begin()+i,temp2);
 		combNumInRow.insert(combNumInRow.begin()+i,0);
@@ -165,42 +201,16 @@ void decideCIR()
 		int tempMinCombRow=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
-			string comb;
-			int curIndex=0;
-			for(int i=k-1;i>=0;i--)
+			int* p=new int[t];
+			for(int i=0;i<t;i++)
 			{
-				if(combinations[c][i]==false)
-				{
-					int tempV,zeroNum=0;
-					tempV=v[i]-1;
-					do
-					{
-						zeroNum++;
-						tempV=tempV/10;
-					}while(tempV!=0);
-					comb.insert(curIndex,zeroNum,'x');
-					curIndex+=zeroNum;
-				}
-				else
-				{
-					int tempV,tempMij;
-					tempV=v[i]-1;
-					tempMij=MCA[row][i];
-					do
-					{
-						tempV=tempV/10;
-						int temp=tempMij%10;
-						comb.insert(curIndex++,1,(char)(temp+48));
-						tempMij=tempMij/10;
-					}while(tempV!=0);
-				}
+				p[i]=MCA[row][combIndex[c][i]];
 			}
-			hash_map<string, int>::iterator iter=G.find(comb);
-			if(iter!=G.end())
+			key comb=key(p,c);
+			if(G.find(comb)!=G.end())
 			{
 				combInRow[row][c]=comb;
-				int valueNum=iter->second;
-				if(valueNum==1)
+				if(G[comb]==1)
 				{
 					combWhetherUnique[row][c]=true;
 					tempMinCombRow++;
@@ -728,8 +738,8 @@ int main()
 		int bestSFCurNum=curCombNum;
 		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 		{
-			//L=N*k*V*V;
-			L=N*k*V;
+			L=N*k*V*V;
+			//L=N*k*V;
 			int storeCurNum=bestSFCurNum;
 			//int count=0,l=N*k*V;
 			for(int i=0;i<L;i++)
