@@ -22,16 +22,6 @@ vector<int> v;
 class key
 {
 public:
-	key(vector<int> row,int* index,int p2)
-	{
-		value=new int[t];
-		for(int i=0;i<t;i++)
-		{
-			value[i]=row[index[i]];
-		}
-		paraNum=p2;
-	}
-
 	key(int* p1,int p2)
 	{
 		value=new int[t];
@@ -68,7 +58,7 @@ public:
 		int hashcode=k.value[0];
 		for(int i=1;i<t;i++)
 			hashcode=hashcode*v[i]+k.value[i];
-		return hashcode;
+		return (size_t)hashcode;
     }
 };
 class equal_class
@@ -140,9 +130,10 @@ void initMCA()
 void getCombIndex(int c,int* p)
 {
 	int* index=new int[t];
-	for(int i=0;i<t;i++)
+	for(int i=0,j=0;i<k;i++)
 	{
-		index[i]=p[i];
+		if(p[i]==1)
+			index[j++]=i;
 	}
 	combIndex.insert(combIndex.begin()+c,index);
 }
@@ -181,7 +172,12 @@ void addCombToG(vector<int> newRow)
 {
 	for(int c=0;c<paraCombNum;c++)
 	{
-		key comb=key(newRow,combIndex[c],c);
+		int* value=new int[t];
+		for(int i=0;i<t;i++)
+		{
+			value[i]=newRow[combIndex[c][i]];
+		}
+		key comb=key(value,c);
 		if(G.find(comb)==G.end())
 		{
 			G.insert(make_pair(comb,1));
@@ -202,9 +198,14 @@ void initCIR()
 		}
 		combWhetherUnique.insert(combWhetherUnique.begin()+i,temp1);
 		vector<key> temp2;
+		int* value=new int[t];
+		for(int i=0;i<t;i++)
+		{
+			value[i]=MCA[0][i];
+		}
 		for(int j=0;j<paraCombNum;j++)
 		{
-			temp2.insert(temp2.begin()+j,key(MCA[0],combIndex[0],-1));
+			temp2.insert(temp2.begin()+j,key(value,-1));
 		}
 		combInRow.insert(combInRow.begin()+i,temp2);
 		combNumInRow.insert(combNumInRow.begin()+i,0);
@@ -219,7 +220,12 @@ void decideCIR()
 		int tempMinCombRow=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
-			key comb=key(MCA[row],combIndex[c],c);
+			int* value=new int[t];
+			for(int i=0;i<t;i++)
+			{
+				value[i]=MCA[row][combIndex[c][i]];
+			}
+			key comb=key(value,c);
 			if(G.find(comb)!=G.end())
 			{
 				combInRow[row][c]=comb;
@@ -262,7 +268,12 @@ void updateCIR(int type,vector<int> row,int curRowNum,int rowNum,bool ifNeed)// 
 	}
 	for(int c=0;c<paraCombNum;c++)
 	{
-		key comb=key(row,combIndex[c],c);
+		int* value=new int[t];
+		for(int i=0;i<t;i++)
+		{
+			value[i]=row[combIndex[c][i]];
+		}
+		key comb=key(value,c);
 		if(type==1)
 		{
 			if(G[comb]==1)
@@ -371,7 +382,12 @@ int fitness(int type,int oldRowIndex,vector<int> individual)//type=1 judge if we
 		int incresedComb=0; 
 		for(int c=0;c<paraCombNum;c++)
 		{
-			key comb=key(individual,combIndex[c],c);
+			int* value=new int[t];
+			for(int i=0;i<t;i++)
+			{
+				value[i]=individual[combIndex[c][i]];
+			}
+			key comb=key(value,c);
 			if(G.find(comb)==G.end()||(combInRow[oldRowIndex][c]==comb&&combWhetherUnique[oldRowIndex][c]==true))
 			{
 				incresedComb++;
@@ -406,9 +422,14 @@ void addOneRow(int rowNum)
 	}
 	combWhetherUnique.insert(combWhetherUnique.begin()+rowNum,temp1);
 	vector<key> temp2;
+	int* value=new int[t];
+	for(int i=0;i<t;i++)
+	{
+		value[i]=MCA[0][i];
+	}
 	for(int j=0;j<paraCombNum;j++)
 	{
-		temp2.insert(temp2.begin()+j,key(MCA[0],combIndex[0],-1));
+		temp2.insert(temp2.begin()+j,key(value,-1));
 	}
 	combInRow.insert(combInRow.begin()+rowNum,temp2);
 	combNumInRow.insert(combNumInRow.begin()+rowNum,0);
@@ -645,8 +666,8 @@ int main()
 		int bestSFCurNum=curCombNum;
 		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 		{
-			L=N*k*V*V;
-			//L=N*k*V;
+			//L=N*k*V*V;
+			L=N*k*V;
 			int storeCurNum=bestSFCurNum;
 			//int count=0,l=N*k*V;
 			for(int i=0;i<L;i++)

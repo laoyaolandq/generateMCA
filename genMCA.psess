@@ -2,7 +2,7 @@
 <VSPerformanceSession Version="1.00">
   <Options>
     <Solution>genMCA.sln</Solution>
-    <CollectionMethod>Sampling</CollectionMethod>
+    <CollectionMethod>Instrumentation</CollectionMethod>
     <AllocationMethod>None</AllocationMethod>
     <AddReport>true</AddReport>
     <ResourceBasedAnalysisSelected>true</ResourceBasedAnalysisSelected>
@@ -36,7 +36,7 @@
   </PostinstrumentEvent>
   <Binaries>
     <ProjBinary>
-      <Path>Debug\genMCA.exe</Path>
+      <Path>Release\genMCA.exe</Path>
       <ArgumentTimestamp>01/01/0001 00:00:00</ArgumentTimestamp>
       <Instrument>true</Instrument>
       <Sample>true</Sample>
@@ -48,7 +48,7 @@
       <LaunchProject>true</LaunchProject>
       <OverrideProjectSettings>false</OverrideProjectSettings>
       <LaunchMethod>Executable</LaunchMethod>
-      <ExecutablePath>Debug\genMCA.exe</ExecutablePath>
+      <ExecutablePath>Release\genMCA.exe</ExecutablePath>
       <StartupDirectory>genMCA\</StartupDirectory>
       <Arguments>
       </Arguments>
@@ -67,6 +67,11 @@
       <ProjName>genMCA</ProjName>
     </ProjBinary>
   </Binaries>
+  <Reports>
+    <Report>
+      <Path>genMCA151213.vsp</Path>
+    </Report>
+  </Reports>
   <Launches>
     <ProjBinary>
       <Path>:PB:{EC227EFC-4A3C-41B0-BD99-C0485F7375E1}|genMCA\genMCA.vcxproj</Path>
