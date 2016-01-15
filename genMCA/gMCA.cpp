@@ -18,6 +18,7 @@ vector<int*> combIndex;
 vector<int> combNumInRow;
 vector<vector<bool>> combWhetherUnique;
 vector<int> v;
+vector<int> runtime;
 
 class key
 {
@@ -434,8 +435,23 @@ void addOneRow(int rowNum)
 	combInRow.insert(combInRow.begin()+rowNum,temp2);
 	combNumInRow.insert(combNumInRow.begin()+rowNum,0);
 }
+void deleteZRow()
+{
+	for(int i=0;i<N;i++)
+	{
+		if(combNumInRow[i]==0)
+		{
+			updateCIR(1,MCA[i],i,0,false);
+			std::vector<vector<int>>::iterator iter1=MCA.begin()+i;
+			MCA.erase(iter1);
+			std::vector<vector<key>>::iterator iter2=combInRow.begin()+i;
+			combInRow.erase(iter2);
+		}
+	}
+}
 void printMCA()
 {
+	deleteZRow();
 	for(int i=0;i<N;i++)
 	{
 		for(int j=0;j<k;j++)
@@ -596,6 +612,38 @@ void verifyMCA()
 	else
 		printf("The answer is wrong!\n");
 }
+void getRuntime()
+{
+	int allPossibleTestCaseNum=1;
+	for(int i=0;i<k;i++)
+		allPossibleTestCaseNum=allPossibleTestCaseNum*v[i];
+	for(int j=0;j<allPossibleTestCaseNum;j++)
+		runtime.insert(runtime.begin()+j,rand());
+}
+int getRowIndex(int rowNum)
+{
+	int index=MCA[rowNum][0];
+	for(int i=1;i<k;i++)
+	{
+		index=index*v[i]+MCA[rowNum][i];
+	}
+	return index;
+}
+int getMaxRowIndex()
+{
+	int index=0;
+	for(int i=1;i<N;i++)
+	{
+		if(runtime[getRowIndex(i)]>runtime[getRowIndex(index)])
+			index=i;
+	}
+	return index;
+}
+void replaceOneRow()
+{
+	//find all combs that are unique, the results can be used to construct one row(or two rows, each has half of the unique combs) that has all the unique combs in the old row while its runtime is less.
+
+}
 int main()
 {
 	//initialize parameters and MCA
@@ -641,6 +689,7 @@ int main()
 	}
 	initMCA();
 	genCombs();
+	getRuntime();
 	for(int i=0;i<N;i++)
 	{
 		addCombToG(MCA[i]);
