@@ -22,6 +22,8 @@ vector<int> runtime;
 vector<int*> cIndex;
 vector<int> lessRTR;
 int curRT;
+int sumRT;
+bool changeFlag;
 
 class key
 {
@@ -662,6 +664,7 @@ void dfs2(vector<int> newRow,int* index,int dep)
 		int temp=runtime[product];
 		if(temp<curRT)
 		{
+			changeFlag=true;
 			curRT=temp;
 			lessRTR=newRow;
 		}
@@ -694,12 +697,17 @@ void replaceOneRow(int rowNum)
 		else
 			newRow.insert(newRow.begin()+i,0);
 	}
-	curRT=100000000;
+	changeFlag=false;
+	curRT=runtime[getRowIndex(rowNum)];
 	dfs2(newRow,index,0);
-	vector<int> temp=MCA[rowNum];
-	MCA[rowNum]=newRow;
-	updateCIR(1,temp,rowNum,0,false);
-	updateCIR(2,newRow,rowNum,0,false);		
+	if(changeFlag==true)
+	{
+		sumRT=sumRT-runtime[getRowIndex(rowNum)]+curRT;
+		vector<int> temp=MCA[rowNum];
+		MCA[rowNum]=lessRTR;
+		updateCIR(1,temp,rowNum,0,false);
+		updateCIR(2,lessRTR,rowNum,0,false);
+	}
 }
 void printMCA()
 {
@@ -712,12 +720,31 @@ void printMCA()
 		}
 		printf("\n");
 	}
-	int sum=0;
 	for(int i=0;i<N;i++)
 	{
-		sum=sum+runtime[getRowIndex(i)];
+		sumRT=sumRT+runtime[getRowIndex(i)];
 	}
-	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sum);
+	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	int tempSum;
+	do
+	{
+		tempSum=sumRT;
+		for(int i=0;i<N;i++)
+		{
+			replaceOneRow(i);
+			verifyMCA();
+		}
+	}while(tempSum<sumRT);
+	deleteZRow();
+	for(int i=0;i<N;i++)
+	{
+		for(int j=0;j<k;j++)
+		{
+			printf("%d ",MCA[i][j]);
+		}
+		printf("\n");
+	}
+	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 }
 
 int main()
