@@ -19,6 +19,9 @@ vector<int> combNumInRow;
 vector<vector<bool>> combWhetherUnique;
 vector<int> v;
 vector<int> runtime;
+vector<int*> cIndex;
+vector<int> lessRTR;
+int curRT;
 
 class key
 {
@@ -138,6 +141,13 @@ void getCombIndex(int c,int* p)
 	}
 	combIndex.insert(combIndex.begin()+c,index);
 }
+void addCIndex(int c,int* perIndex)
+{
+	int* temp=new int[k];
+	for(int i=0;i<k;i++)
+		temp[i]=perIndex[i];
+	cIndex.insert(cIndex.begin()+c,temp);
+}
 void genCombs()
 {
 	int* perIndex=new int[k];
@@ -166,6 +176,7 @@ void genCombs()
 		totalCombNum+=tempCombNum;
 		combinations.insert(combinations.begin()+paraCombNum,temp);
 		getCombIndex(paraCombNum,perIndex);
+		addCIndex(paraCombNum,perIndex);
 		paraCombNum++;
 	}while(next_permutation(perIndex,perIndex+k));
 }
@@ -449,19 +460,6 @@ void deleteZRow()
 		}
 	}
 }
-void printMCA()
-{
-	deleteZRow();
-	for(int i=0;i<N;i++)
-	{
-		for(int j=0;j<k;j++)
-		{
-			printf("%d ",MCA[i][j]);
-		}
-		printf("\n");
-	}
-	printf("totalCombNum is %d,N is %d.\n",totalCombNum,N);
-}
 double generateP(int c1,int c2,int T)
 {
 	return exp(((double)(c1-c2))/((double)T));
@@ -612,7 +610,7 @@ void verifyMCA()
 	else
 		printf("The answer is wrong!\n");
 }
-void getRuntime()
+void getAllCaseRuntime()
 {
 	int allPossibleTestCaseNum=1;
 	for(int i=0;i<k;i++)
@@ -639,11 +637,89 @@ int getMaxRowIndex()
 	}
 	return index;
 }
-void replaceOneRow()
+void dfs2(vector<int> newRow,int* index,int dep)
+{
+	if(dep<k)
+	{
+		if(index[dep]==1)
+			dfs2(newRow,index,dep+1);
+		else
+		{
+			for(int i=0;i<v[dep];i++)
+			{
+				newRow[dep]=i;
+				dfs2(newRow,index,dep+1);
+			}
+		}
+	}
+	else
+	{
+		int product=newRow[0];
+		for(int i=1;i<k;i++)
+		{
+			product=product*v[i]+newRow[i];
+		}
+		int temp=runtime[product];
+		if(temp<curRT)
+		{
+			curRT=temp;
+			lessRTR=newRow;
+		}
+	}
+}
+void replaceOneRow(int rowNum)
 {
 	//find all combs that are unique, the results can be used to construct one row(or two rows, each has half of the unique combs) that has all the unique combs in the old row while its runtime is less.
-
+	int* index=new int[k];
+	for(int i=0;i<k;i++)
+	{
+		index[i]=0;
+	}
+	for(int c=0;c<paraCombNum;c++)
+	{
+		if(combWhetherUnique[rowNum][c]==true)
+		{
+			for(int i=0;i<k;i++)
+			{
+				if(cIndex[c][i]==1&&index[i]==0)
+					index[i]=1;
+			}
+		}
+	}
+	vector<int> newRow;
+	for(int i=0;i<k;i++)
+	{
+		if(index[i]==1)
+			newRow.insert(newRow.begin()+i,MCA[rowNum][i]);
+		else
+			newRow.insert(newRow.begin()+i,0);
+	}
+	curRT=100000000;
+	dfs2(newRow,index,0);
+	vector<int> temp=MCA[rowNum];
+	MCA[rowNum]=newRow;
+	updateCIR(1,temp,rowNum,0,false);
+	updateCIR(2,newRow,rowNum,0,false);		
 }
+void printMCA()
+{
+	deleteZRow();
+	for(int i=0;i<N;i++)
+	{
+		for(int j=0;j<k;j++)
+		{
+			printf("%d ",MCA[i][j]);
+		}
+		printf("\n");
+	}
+	int sum=0;
+	for(int i=0;i<N;i++)
+	{
+		sum=sum+runtime[getRowIndex(i)];
+	}
+	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sum);
+}
+
 int main()
 {
 	//initialize parameters and MCA
@@ -689,7 +765,7 @@ int main()
 	}
 	initMCA();
 	genCombs();
-	getRuntime();
+	getAllCaseRuntime();
 	for(int i=0;i<N;i++)
 	{
 		addCombToG(MCA[i]);
