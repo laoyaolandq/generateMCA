@@ -21,9 +21,14 @@ vector<int> v;
 vector<int> runtime;
 vector<int*> cIndex;
 vector<int> lessRTR;
+vector<vector<int>> group;
+vector<int> groupPro;
+vector<vector<int>> cMinRT;
 int curRT;
 int sumRT;
 bool changeFlag;
+int NP,gNum;
+float F,CR;
 
 class key
 {
@@ -708,6 +713,123 @@ void replaceOneRow(int rowNum)
 		updateCIR(1,temp,rowNum,0,false);
 		updateCIR(2,lessRTR,rowNum,0,false);
 	}
+}
+void initGroup(int rowNum,int c)
+{
+	group.clear();
+	cMinRT.clear();
+	NP=100;
+	gNum=1000;
+	F=2;
+	CR=0.2;
+	for(int i=0;i<NP;i++)
+	{
+		vector<int> temp;
+		for(int j=0;j<k;j++)
+		{
+			if(cIndex[c][j]==1)
+				temp.insert(temp.begin()+j,MCA[rowNum][j]);
+			else
+				temp.insert(temp.begin()+j,rand()%v[j]);
+		}
+		group.insert(group.begin()+i,temp);
+		int product=temp[0];
+		for(int i=1;i<k;i++)
+		{
+			product=product*v[i]+temp[i];
+		}
+		groupPro.insert(groupPro.begin()+i,runtime[product]);
+	}
+}
+void findMin(int cNum,int c)
+{
+	int i=0;
+	while(i++<gNum)
+	{
+		for(int crow=0;crow<NP;crow++)
+		{
+			//mutation
+			vector<int> candidateIn,fCandiIn;
+			int r1,r2,r3;
+			do
+			{
+				r1=rand()%NP;
+			}while(r1==crow);
+			do
+			{
+				r2=rand()%NP;
+			}while(r2==crow||r2==r1);
+			do
+			{
+				r3=rand()%NP;
+			}while(r3==crow||r3==r1||r3==r2);
+			//float t=exp(1.0-(float)gNum/(float)(gNum+1-(i+1)));
+			//float f=F*pow(2.0,t);
+			for(int i=0;i<k;i++)
+			{
+				float point=(float)(group[r1][i]+F*(group[r2][i]-group[r3][i]))-(int)(group[r1][i]+F*(group[r2][i]-group[r3][i]));
+				int temp=abs((int)(group[r1][i]+F*(group[r2][i]-group[r3][i])))%v[i];
+				int getLarger=rand()%10000;
+				if((float)getLarger/10000.0<=point)
+					temp=temp+1;
+				candidateIn.insert(candidateIn.begin()+i,temp);
+			}
+			//crossover
+			int jrand;
+			do
+			{
+				jrand=rand()%k;
+			}while(cIndex[c][jrand]==1);
+			for(int i=0;i<k;i++)
+			{
+				if((rand()%100<(CR*100)||i==jrand)&&cIndex[c][i]!=1)
+					fCandiIn.insert(fCandiIn.begin()+i,candidateIn[i]);
+				else
+					fCandiIn.insert(fCandiIn.begin()+i,group[crow][i]);
+			}
+			//selection
+			//vector<int> fCandiIn=group[crow];
+			int product=fCandiIn[0];
+			for(int i=1;i<k;i++)
+			{
+				product=product*v[i]+fCandiIn[i];
+			}
+			int temp=runtime[product];
+			if(groupPro[crow]>temp)
+			{
+				group[crow]=fCandiIn;
+				groupPro[crow]=temp;
+			}
+		}
+	}
+	int minIndex=0;
+	for(int j=1;j<NP;j++)
+	{
+		if(groupPro[j]<groupPro[minIndex])
+		{
+			minIndex=j;
+		}
+	}
+	cMinRT.insert(cMinRT.begin()+cNum,group[minIndex]);
+}
+void replaceOneRow2(int rowNum)
+{
+	vector<int> tempC;
+	int cNum=0;
+	for(int c=0;c<paraCombNum;c++)
+	{
+		if(combWhetherUnique[rowNum][c]==true)
+		{
+			tempC.insert(tempC.begin()+cNum,c);
+			cNum++;
+		}
+	}
+	for(int i=0;i<cNum;i++)
+	{
+		initGroup(rowNum,tempC[i]);
+		findMin(i,tempC[i]);
+	}
+
 }
 void printMCA()
 {
