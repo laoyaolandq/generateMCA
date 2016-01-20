@@ -23,7 +23,10 @@ vector<int*> cIndex;
 vector<int> lessRTR;
 vector<vector<int>> group;
 vector<int> groupPro;
-vector<vector<int>> cMinRT;
+vector<vector<int>> candidateRows;
+int candidateRsRT;
+vector<int> cMinRT;
+int cMinRTV;
 int curRT;
 int sumRT;
 bool changeFlag;
@@ -150,9 +153,13 @@ void getCombIndex(int c,int* p)
 }
 void addCIndex(int c,int* perIndex)
 {
-	int* temp=new int[k];
+	int* temp=new int[t];
+	int cNum=0;
 	for(int i=0;i<k;i++)
-		temp[i]=perIndex[i];
+	{
+		if(perIndex[i]==1)
+			temp[cNum++]=i;
+	}
 	cIndex.insert(cIndex.begin()+c,temp);
 }
 void genCombs()
@@ -415,24 +422,31 @@ int fitness(int type,int oldRowIndex,vector<int> individual)//type=1 judge if we
 		return totalCombNum-(curCombNum-combNumInRow[oldRowIndex])-incresedComb;
 	}
 }
-void addOneRow(int rowNum)
+void addOneRow(int rowNum,int type,vector<int> newRow)
 {
-	vector<int> firstTry;
-	for(int j=0;j<k;j++)
-		firstTry.insert(firstTry.begin()+j,rand()%v[j]);
-	MCA.insert(MCA.begin()+rowNum,firstTry);
-	int maxHDRow=calculateHD(rowNum,firstTry);
-	for(int i=1;i<p;i++)
+	if(type==1)
 	{
-		vector<int> temp;
+		vector<int> firstTry;
 		for(int j=0;j<k;j++)
-			temp.insert(temp.begin()+j,rand()%v[j]);
-		int curRowHD=calculateHD(rowNum,temp);
-		if(curRowHD>maxHDRow)
+			firstTry.insert(firstTry.begin()+j,rand()%v[j]);
+		MCA.insert(MCA.begin()+rowNum,firstTry);
+		int maxHDRow=calculateHD(rowNum,firstTry);
+		for(int i=1;i<p;i++)
 		{
-			MCA[rowNum]=temp;
-			maxHDRow=curRowHD;
+			vector<int> temp;
+			for(int j=0;j<k;j++)
+				temp.insert(temp.begin()+j,rand()%v[j]);
+			int curRowHD=calculateHD(rowNum,temp);
+			if(curRowHD>maxHDRow)
+			{
+				MCA[rowNum]=temp;
+				maxHDRow=curRowHD;
+			}
 		}
+	}
+	else
+	{
+		MCA[N]=newRow;
 	}
 	vector<bool> temp1;
 	for(int j=0;j<paraCombNum;j++)
@@ -687,10 +701,10 @@ void replaceOneRow(int rowNum)
 	{
 		if(combWhetherUnique[rowNum][c]==true)
 		{
-			for(int i=0;i<k;i++)
+			for(int i=0;i<t;i++)
 			{
-				if(cIndex[c][i]==1&&index[i]==0)
-					index[i]=1;
+				if(index[cIndex[c][i]]==0)
+					index[cIndex[c][i]]=1;
 			}
 		}
 	}
@@ -714,12 +728,12 @@ void replaceOneRow(int rowNum)
 		updateCIR(2,lessRTR,rowNum,0,false);
 	}
 }
-void initGroup(int rowNum,int c)
+void initGroup(int rowNum,int* index)
 {
 	group.clear();
 	cMinRT.clear();
 	NP=100;
-	gNum=1000;
+	gNum=100;
 	F=2;
 	CR=0.2;
 	for(int i=0;i<NP;i++)
@@ -727,7 +741,7 @@ void initGroup(int rowNum,int c)
 		vector<int> temp;
 		for(int j=0;j<k;j++)
 		{
-			if(cIndex[c][j]==1)
+			if(index[j]==1)
 				temp.insert(temp.begin()+j,MCA[rowNum][j]);
 			else
 				temp.insert(temp.begin()+j,rand()%v[j]);
@@ -741,11 +755,22 @@ void initGroup(int rowNum,int c)
 		groupPro.insert(groupPro.begin()+i,runtime[product]);
 	}
 }
-void findMin(int cNum,int c)
+void findMin(int* index)
 {
 	int i=0;
+	int minIndex=0;
+	for(int j=1;j<NP;j++)
+	{
+		if(groupPro[j]<groupPro[minIndex])
+		{
+			minIndex=j;
+		}
+	}
+	int minRuntime;
+	int equalTime=0;
 	while(i++<gNum)
 	{
+		minRuntime=groupPro[minIndex];
 		for(int crow=0;crow<NP;crow++)
 		{
 			//mutation
@@ -779,10 +804,10 @@ void findMin(int cNum,int c)
 			do
 			{
 				jrand=rand()%k;
-			}while(cIndex[c][jrand]==1);
+			}while(index[jrand]==1);
 			for(int i=0;i<k;i++)
 			{
-				if((rand()%100<(CR*100)||i==jrand)&&cIndex[c][i]!=1)
+				if((rand()%100<(CR*100)||i==jrand)&&index[i]!=1)
 					fCandiIn.insert(fCandiIn.begin()+i,candidateIn[i]);
 				else
 					fCandiIn.insert(fCandiIn.begin()+i,group[crow][i]);
@@ -799,37 +824,224 @@ void findMin(int cNum,int c)
 			{
 				group[crow]=fCandiIn;
 				groupPro[crow]=temp;
+				if(groupPro[crow]<groupPro[minIndex])
+				{
+					minIndex=crow;
+				}
+			}
+		}
+		if(minRuntime==groupPro[minIndex])
+		{
+			equalTime++;
+			if(equalTime==10)
+				break;
+		}
+		else
+		{
+			equalTime=0;
+		}
+	}
+	cMinRT=group[minIndex];
+	cMinRTV=groupPro[minIndex];
+}
+int calculateRowsRT(int rowNum,vector<int> fCandiIn,int tNum,int* ci,int d)
+{
+	int* index1=new int[k];
+	for(int j=0;j<k;j++)
+	{
+		index1[j]=0;
+	}
+	for(int j=0;j<tNum;j++)
+	{
+		if(fCandiIn[j]==d)
+		{
+			for(int l=0;l<t;l++)
+			{
+				if(index1[cIndex[ci[j]][l]]==0)
+					index1[cIndex[ci[j]][l]]=1;
 			}
 		}
 	}
-	int minIndex=0;
-	for(int j=1;j<NP;j++)
+	initGroup(rowNum,index1);
+	findMin(index1);
+	return cMinRTV;
+}
+void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//tNum is the unique combs' number
+{
+	if(degree==1)
 	{
-		if(groupPro[j]<groupPro[minIndex])
+		initGroup(rowNum,index);
+		findMin(index);
+		candidateRows.insert(candidateRows.begin(),cMinRT);
+		candidateRsRT=cMinRTV;
+		return;
+	}
+	
+	vector<vector<int>> group1;
+	vector<int> groupPro1;
+	int minIndex=0;
+	int NP1=100;
+	int gNum1=100;
+	float F1=2;
+	float CR1=0.2;
+	for(int i=0;i<NP1;i++)
+	{
+		vector<int> temp;
+		for(int j=0;j<tNum;j++)
 		{
-			minIndex=j;
+			temp.insert(temp.begin()+j,rand()%degree);
+		}
+		int sumRT=0;
+		for(int d=0;d<degree;d++)
+		{
+			calculateRowsRT(rowNum,temp,tNum,ci,d);
+			sumRT=sumRT+cMinRTV;
+		}
+		group1.insert(group1.begin()+i,temp);
+		groupPro1.insert(groupPro1.begin+i,sumRT);
+		if(sumRT<groupPro1[minIndex])
+			minIndex=i;
+	}
+	int i=0;
+	int minRuntime;
+	int equalTime=0;
+	while(i++<gNum1)
+	{
+		minRuntime=groupPro1[minIndex];
+		for(int crow=0;crow<NP1;crow++)
+		{
+			//mutation
+			vector<int> candidateIn,fCandiIn;
+			int r1,r2,r3;
+			do
+			{
+				r1=rand()%NP1;
+			}while(r1==crow);
+			do
+			{
+				r2=rand()%NP1;
+			}while(r2==crow||r2==r1);
+			do
+			{
+				r3=rand()%NP1;
+			}while(r3==crow||r3==r1||r3==r2);
+			//float t=exp(1.0-(float)gNum1/(float)(gNum1+1-(i+1)));
+			//float f=F1*pow(2.0,t);
+			for(int i=0;i<k;i++)
+			{
+				float point=(float)(group1[r1][i]+F*(group1[r2][i]-group1[r3][i]))-(int)(group1[r1][i]+F*(group1[r2][i]-group1[r3][i]));
+				int temp=abs((int)(group1[r1][i]+F*(group1[r2][i]-group1[r3][i])))%v[i];
+				int getLarger=rand()%10000;
+				if((float)getLarger/10000.0<=point)
+					temp=temp+1;
+				candidateIn.insert(candidateIn.begin()+i,temp);
+			}
+			//crossover
+			int jrand;
+			jrand=rand()%k;
+			for(int i=0;i<k;i++)
+			{
+				if(rand()%100<(CR*100)||i==jrand)
+					fCandiIn.insert(fCandiIn.begin()+i,candidateIn[i]);
+				else
+					fCandiIn.insert(fCandiIn.begin()+i,group1[crow][i]);
+			}
+			//selection
+			//vector<int> fCandiIn=group1[crow];
+			int sumRT=0;
+			for(int d=0;d<degree;d++)
+			{
+				calculateRowsRT(rowNum,fCandiIn,tNum,ci,d);
+				sumRT=sumRT+cMinRTV;
+				if(sumRT>groupPro1[crow])
+					break;
+			}
+			if(groupPro1[crow]>sumRT)
+			{
+				group1[crow]=fCandiIn;
+				groupPro1[crow]=sumRT;
+				if(sumRT<groupPro1[minIndex])
+					minIndex=crow;
+			}
+		}
+		if(minRuntime==groupPro1[minIndex])
+		{
+			equalTime++;
+			if(equalTime==10)
+				break;
+		}
+		else
+		{
+			equalTime=0;
 		}
 	}
-	cMinRT.insert(cMinRT.begin()+cNum,group[minIndex]);
+	if(groupPro1[minIndex]>candidateRsRT)
+		return;
+	candidateRsRT=groupPro1[minIndex];
+	candidateRows.clear();
+	for(int d=0;d<degree;d++)
+	{
+		int* index1=new int[k];
+		for(int j=0;j<k;j++)
+		{
+			index1[j]=0;
+		}
+		for(int j=0;j<tNum;j++)
+		{
+			if(group1[minIndex][j]==d)
+			{
+				for(int l=0;l<t;l++)
+				{
+					if(index1[cIndex[ci[j]][l]]==0)
+						index1[cIndex[ci[j]][l]]=1;
+				}
+			}
+		}
+		initGroup(rowNum,index1);
+		findMin(index1);
+		candidateRows.insert(candidateRows.begin()+d,cMinRT);
+	}
 }
 void replaceOneRow2(int rowNum)
 {
-	vector<int> tempC;
-	int cNum=0;
+	int* index=new int[k];
+	int* ci=new int[combNumInRow[rowNum]];
+	for(int i=0;i<k;i++)
+	{
+		index[i]=0;
+	}
+	int tNum=0;
 	for(int c=0;c<paraCombNum;c++)
 	{
 		if(combWhetherUnique[rowNum][c]==true)
 		{
-			tempC.insert(tempC.begin()+cNum,c);
-			cNum++;
+			for(int i=0;i<t;i++)
+			{
+				if(index[cIndex[c][i]]==0)
+					index[cIndex[c][i]]=1;
+			}
+			ci[tNum]=c;
+			tNum++;
 		}
 	}
-	for(int i=0;i<cNum;i++)
+	for(int i=1;i<tNum+1;i++)
 	{
-		initGroup(rowNum,tempC[i]);
-		findMin(i,tempC[i]);
+		findMinG(rowNum,i,runtime[getRowIndex(rowNum)],index,tNum,ci);
 	}
-
+	if(candidateRsRT>runtime[getRowIndex(rowNum)])
+		return;
+	int size=candidateRows.size();
+	sumRT=sumRT-runtime[getRowIndex(rowNum)]+candidateRsRT;
+	vector<int> temp=MCA[rowNum];
+	MCA[rowNum]=candidateRows[0];
+	updateCIR(1,temp,rowNum,0,false);
+	updateCIR(2,candidateRows[0],rowNum,0,false);
+	for(int i=1;i<size;i++)
+	{
+		addOneRow(N,2,candidateRows[i]);
+		updateCIR(3,MCA[N],0,N,true);
+		N=N+1;
+	}
 }
 void printMCA()
 {
@@ -868,7 +1080,6 @@ void printMCA()
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 }
-
 int main()
 {
 	//initialize parameters and MCA
@@ -982,7 +1193,7 @@ int main()
 			else
 				tDecreWOCombNumChange=0;
 		}
-		addOneRow(N);
+		addOneRow(N,1,MCA[0]);
 		updateCIR(3,MCA[N],0,N,true);
 		N=N+1;
 		if(fitness(1,0,MCA[0])==0)
