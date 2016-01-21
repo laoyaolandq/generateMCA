@@ -651,25 +651,28 @@ void getAllCaseRuntime(int type)
 			runtime.insert(runtime.begin()+j,-1);
 	}
 }
-void getRuntime(vector<int> row,long long product)
+int getRuntime(vector<int> row)
 {
-	//the function which can be used to calculate the rows' runtime is defined here
-	int RTime=0;
-	for(int i=0;i<k-1;i++)
-	{
-		RTime=RTime+row[i]*row[i+1];
-	}
-	runtime[product]=RTime;
-	return;
-}
-long long getRowIndex(int rowNum)
-{
-	long long index=MCA[rowNum][0];
+	long long product=row[0];
 	for(int i=1;i<k;i++)
 	{
-		index=index*v[i]+MCA[rowNum][i];
+		product=product*v[i]+row[i];
 	}
-	return index;
+	if(runtime[product]==-1)
+	{
+		//the function which can be used to calculate the rows' runtime is defined here
+		int RTime=0;
+		for(int i=0;i<k-1;i++)
+		{
+			RTime=RTime+row[i]*row[i+1];
+		}
+		runtime[product]=RTime;
+		return RTime;
+	}
+	else
+	{
+		return runtime[product];
+	}
 }
 void dfs2(vector<int> newRow,int* index,int dep)
 {
@@ -688,12 +691,8 @@ void dfs2(vector<int> newRow,int* index,int dep)
 	}
 	else
 	{
-		long long product=newRow[0];
-		for(int i=1;i<k;i++)
-		{
-			product=product*v[i]+newRow[i];
-		}
-		int temp=runtime[product];
+		
+		int temp=getRuntime(newRow);
 		if(temp<curRT)
 		{
 			changeFlag=true;
@@ -730,7 +729,7 @@ void replaceOneRow(int rowNum)
 			newRow.insert(newRow.begin()+i,0);
 	}
 	changeFlag=false;
-	int rowRT=runtime[getRowIndex(rowNum)];
+	int rowRT=getRuntime(MCA[rowNum]);
 	curRT=rowRT;
 	dfs2(newRow,index,0);
 	if(changeFlag==true)
@@ -761,18 +760,26 @@ void initGroup(int rowNum,int* index)
 				temp.insert(temp.begin()+j,rand()%v[j]);
 		}
 		group.insert(group.begin()+i,temp);
-		long long product=temp[0];
-		for(int i=1;i<k;i++)
-		{
-			product=product*v[i]+temp[i];
-		}
-		if(runtime[product]==-1)
-			getRuntime(temp,product);
-		groupPro.insert(groupPro.begin()+i,runtime[product]);
+		groupPro.insert(groupPro.begin()+i,getRuntime(temp));
 	}
 }
 void findMin(int* index)
 {
+	int flag=0;
+	for(int i=0;i<k;i++)
+	{
+		if(index[i]==0)
+		{
+			flag=1;
+			break;
+		}
+	}
+	if(flag==0)
+	{
+		cMinRTV=100000000;
+		cMinRT=group[0];
+		return;
+	}
 	int i=0;
 	int minIndex=0;
 	for(int j=1;j<NP;j++)
@@ -817,7 +824,7 @@ void findMin(int* index)
 			}
 			//crossover
 			int jrand;
-			jrand=rand()%k;
+			do{jrand=rand()%k;}while(index[jrand]==1);
 			for(int i=0;i<k;i++)
 			{
 				if((rand()%100<(CR*100)||i==jrand)&&index[i]!=1)
@@ -827,14 +834,7 @@ void findMin(int* index)
 			}
 			//selection
 			//vector<int> fCandiIn=group[crow];
-			long long product=fCandiIn[0];
-			for(int i=1;i<k;i++)
-			{
-				product=product*v[i]+fCandiIn[i];
-			}
-			if(runtime[product]==-1)
-				getRuntime(fCandiIn,product);
-			int temp=runtime[product];
+			int temp=getRuntime(fCandiIn);
 			if(groupPro[crow]>temp)
 			{
 				group[crow]=fCandiIn;
@@ -845,7 +845,7 @@ void findMin(int* index)
 				}
 			}
 		}
-		/*if(minRuntime==groupPro[minIndex])
+		if(minRuntime==groupPro[minIndex])
 		{
 			equalTime++;
 			if(equalTime==10)
@@ -854,7 +854,7 @@ void findMin(int* index)
 		else
 		{
 			equalTime=0;
-		}*/
+		}
 	}
 	cMinRT=group[minIndex];
 	cMinRTV=groupPro[minIndex];
@@ -1041,10 +1041,7 @@ void replaceOneRow2(int rowNum)
 			tNum++;
 		}
 	}
-	long long product=getRowIndex(rowNum);
-	if(runtime[product]==-1)
-		getRuntime(MCA[rowNum],product);
-	int rowUCNum=runtime[product];
+	int rowUCNum=getRuntime(MCA[rowNum]);
 	findMinG(rowNum,1,rowUCNum,index,tNum,ci);
 	/*for(int i=1;i<tNum+1;i++)
 	{
@@ -1065,6 +1062,114 @@ void replaceOneRow2(int rowNum)
 		N=N+1;
 	}
 }
+int canculateMinRT(vector<int> row,int index,int oldV)
+{
+	int indexV=oldV;
+	for(int i=0;i<v[index];i++)
+	{
+		if(i==oldV)
+			continue;
+		row[index]=i;
+		if(cMinRTV>getRuntime(row))
+		{
+			long long product=row[0];
+			for(int i=1;i<k;i++)
+			{
+				product=product*v[i]+row[i];
+			}
+			cMinRTV=runtime[product];
+			indexV=i;
+		}
+	}
+	return indexV;
+}
+bool findMinWithSA(vector<int> row,int* index,int RT)
+{
+	int flag=0;
+	for(int i=0;i<k;i++)
+	{
+		if(index[i]==0)
+		{
+			flag=1;
+			break;
+		}
+	}
+	if(flag==0)
+		return false;
+	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
+	int n=row.size();
+	int V=n,frozenFactor=11;
+	int L;
+	T=T0;
+	int count=0;
+	cMinRTV=RT;
+	int bestRT=RT;
+	while(count<frozenFactor&&T>Tf)
+	{
+		//L=n*k*V*V;
+		L=n*k*V;
+		int storeCurRT=bestRT;
+		for(int i=0;i<L;i++)
+		{
+			int j;
+			do{j=rand()%k;}while(index[j]==1);
+			if(index[j]==1)
+				continue;
+			int newV=canculateMinRT(row,j,row[j]);
+			if(newV==row[j])
+				continue;
+			else
+			{
+				row[j]=newV;
+				bestRT=cMinRTV;
+			}
+		}
+		T=T*coolingFactor;
+		if(bestRT==storeCurRT)
+			count++;
+		else
+			count=0;
+	}
+	if(cMinRTV==RT)
+		return false;
+	else
+	{
+		cMinRT=row;
+		return true;
+	}
+}
+void replaceOneRow3(int rowNum)
+{
+	int* index=new int[k];
+	int* ci=new int[combNumInRow[rowNum]];
+	for(int i=0;i<k;i++)
+	{
+		index[i]=0;
+	}
+	int tNum=0;
+	for(int c=0;c<paraCombNum;c++)
+	{
+		if(combWhetherUnique[rowNum][c]==true)
+		{
+			for(int i=0;i<t;i++)
+			{
+				if(index[cIndex[c][i]]==0)
+					index[cIndex[c][i]]=1;
+			}
+			ci[tNum]=c;
+			tNum++;
+		}
+	}
+	int RT=getRuntime(MCA[rowNum]);
+	if(findMinWithSA(MCA[rowNum],index,RT)==true)
+	{
+		sumRT=sumRT-RT+cMinRTV;
+		vector<int> temp=MCA[rowNum];
+		MCA[rowNum]=cMinRT;
+		updateCIR(1,temp,rowNum,0,false);
+		updateCIR(2,cMinRT,rowNum,0,false);
+	}
+}
 void printMCA()
 {
 	deleteZRow();
@@ -1076,13 +1181,11 @@ void printMCA()
 		}
 		printf("\n");
 	}
-	//need to change getAllCaseTime type,sumRT
+	//need to change getAllCaseTime type
+	sumRT=0;
 	for(int i=0;i<N;i++)
 	{
-		long long product=getRowIndex(i);
-		if(runtime[product]==-1)
-			getRuntime(MCA[i],product);
-		sumRT=sumRT+runtime[product];
+		sumRT=sumRT+getRuntime(MCA[i]);
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 	int tempSum;
@@ -1091,7 +1194,7 @@ void printMCA()
 		tempSum=sumRT;
 		for(int i=0;i<N;i++)
 		{
-			replaceOneRow(i);
+			replaceOneRow2(i);
 			verifyMCA();
 		}
 	}while(tempSum<sumRT);
