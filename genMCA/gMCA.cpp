@@ -895,8 +895,8 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 	vector<vector<int>> group1;
 	vector<int> groupPro1;
 	int minIndex=0;
-	int NP1=10;
-	int gNum1=10;
+	int NP1=5;
+	int gNum1=5;
 	float F1=2;
 	float CR1=0.2;
 	for(int i=0;i<NP1;i++)
@@ -917,11 +917,12 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 		if(sumRT<groupPro1[minIndex])
 			minIndex=i;
 	}
-	int i=0;
+	int gCur=0;
 	int minRuntime;
 	int equalTime=0;
-	while(i++<gNum1)
+	while(gCur<gNum1)
 	{
+		gCur++;
 		minRuntime=groupPro1[minIndex];
 		for(int crow=0;crow<NP1;crow++)
 		{
@@ -1020,14 +1021,22 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 void replaceOneRow2(int rowNum)
 {
 	candidateRows.clear();
-	candidateRsRT=0;
+	candidateRsRT=100000000;
 	int* index=new int[k];
-	int* ci=new int[combNumInRow[rowNum]];
 	for(int i=0;i<k;i++)
 	{
 		index[i]=0;
 	}
 	int tNum=0;
+	for(int c=0;c<paraCombNum;c++)
+	{
+		if(combWhetherUnique[rowNum][c]==true)
+		{
+			tNum++;
+		}
+	}
+	int* ci=new int[tNum];
+	tNum=0;
 	for(int c=0;c<paraCombNum;c++)
 	{
 		if(combWhetherUnique[rowNum][c]==true)
@@ -1059,7 +1068,7 @@ void replaceOneRow2(int rowNum)
 	for(int i=1;i<size;i++)
 	{
 		addOneRow(N,2,candidateRows[i]);
-		updateCIR(3,MCA[N],0,N,true);
+		updateCIR(3,MCA[N],0,N,false);
 		N=N+1;
 	}
 }
@@ -1142,12 +1151,20 @@ bool findMinWithSA(vector<int> row,int* index,int RT)
 void replaceOneRow3(int rowNum)
 {
 	int* index=new int[k];
-	int* ci=new int[combNumInRow[rowNum]];
 	for(int i=0;i<k;i++)
 	{
 		index[i]=0;
 	}
 	int tNum=0;
+	for(int c=0;c<paraCombNum;c++)
+	{
+		if(combWhetherUnique[rowNum][c]==true)
+		{
+			tNum++;
+		}
+	}
+	int* ci=new int[tNum];
+	tNum=0;
 	for(int c=0;c<paraCombNum;c++)
 	{
 		if(combWhetherUnique[rowNum][c]==true)
@@ -1324,7 +1341,7 @@ int main()
 				tDecreWOCombNumChange=0;
 		}
 		addOneRow(N,1,MCA[0]);
-		updateCIR(3,MCA[N],0,N,true);
+		updateCIR(3,MCA[N],0,N,false);
 		N=N+1;
 		if(fitness(1,0,MCA[0])==0)
 		{
