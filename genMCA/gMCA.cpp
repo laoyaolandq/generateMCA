@@ -1077,14 +1077,10 @@ int canculateMinRT(vector<int> row,int index,int oldV)
 		if(i==oldV)
 			continue;
 		row[index]=i;
-		if(cMinRTV>getRuntime(row))
+		int temp=getRuntime(row);
+		if(cMinRTV>temp)
 		{
-			long long product=row[0];
-			for(int i=1;i<k;i++)
-			{
-				product=product*v[i]+row[i];
-			}
-			cMinRTV=runtime[product];
+			cMinRTV=temp;
 			indexV=i;
 		}
 	}
@@ -1109,6 +1105,7 @@ bool findMinWithSA(vector<int> row,int* index,int RT)
 	int L;
 	T=T0;
 	int count=0;
+	cMinRT=row;
 	cMinRTV=RT;
 	int bestRT=RT;
 	while(count<frozenFactor&&T>Tf)
@@ -1120,8 +1117,6 @@ bool findMinWithSA(vector<int> row,int* index,int RT)
 		{
 			int j;
 			do{j=rand()%k;}while(index[j]==1);
-			if(index[j]==1)
-				continue;
 			int newV=canculateMinRT(row,j,row[j]);
 			if(newV==row[j])
 				continue;
@@ -1138,15 +1133,161 @@ bool findMinWithSA(vector<int> row,int* index,int RT)
 			count=0;
 	}
 	if(cMinRTV==RT)
+	{
 		return false;
+	}
 	else
 	{
 		cMinRT=row;
 		return true;
 	}
 }
+int calculateRowsRT2(int rowNum,vector<int> rows,int tNum,int* ci,int d)
+{
+	int* index1=new int[k];
+	for(int j=0;j<k;j++)
+	{
+		index1[j]=0;
+	}
+	for(int j=0;j<tNum;j++)
+	{
+		if(rows[j]==d)
+		{
+			for(int l=0;l<t;l++)
+			{
+				if(index1[cIndex[ci[j]][l]]==0)
+					index1[cIndex[ci[j]][l]]=1;
+			}
+		}
+	}
+	vector<int> temp;
+	for(int j=0;j<k;j++)
+	{
+		if(index1[j]==1)
+			temp.insert(temp.begin()+j,MCA[rowNum][j]);
+		else
+			temp.insert(temp.begin()+j,rand()%v[j]);
+	}
+	int RT=getRuntime(temp);
+	findMinWithSA(temp,index1,RT);
+	return cMinRTV;
+}
+bool findMinWithSAG(int rowNum,int degree,int RT,int* index,int tNum,int* ci)
+{
+	if(degree==1)
+	{
+		if(findMinWithSA(MCA[rowNum],index,RT)==true)
+		{
+			candidateRows.insert(candidateRows.begin(),cMinRT);
+			candidateRsRT=cMinRTV;
+			return true;
+		}
+		else
+		{
+			candidateRows.insert(candidateRows.begin(),cMinRT);
+			candidateRsRT=cMinRTV;
+			return false;
+		}
+	}
+	vector<int> rows;
+	for(int j=0;j<tNum;j++)
+	{
+		rows.insert(rows.begin()+j,rand()%degree);
+	}
+	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
+	int n=rows.size();
+	int V=n,frozenFactor=11;
+	int L;
+	T=T0;
+	int count=0;
+	int sumRT=0;
+	for(int d=0;d<degree;d++)
+	{
+		calculateRowsRT2(rowNum,rows,tNum,ci,d);
+		sumRT=sumRT+cMinRTV;
+	}
+	int candidateRsRT1=sumRT;
+	vector<int> cRows=rows;
+	int bestRT=sumRT;
+	while(count<frozenFactor&&T>Tf)
+	{
+		//L=n*k*V*V;
+		L=n*k*V;
+		int storeCurRT=bestRT;
+		for(int i=0;i<L;i++)
+		{
+			int j=rand()%tNum;
+			int oldV=rows[j];
+			for(int m=0;m<degree;m++)
+			{
+				if(m==oldV)
+					continue;
+				rows[j]=m;
+				int sumRT=0;
+				for(int d=0;d<degree;d++)
+				{
+					calculateRowsRT2(rowNum,rows,tNum,ci,d);
+					sumRT=sumRT+cMinRTV;
+					if(sumRT>candidateRsRT1)
+						break;
+				}
+				if(candidateRsRT1>sumRT)
+				{
+					candidateRsRT1=sumRT;
+					cRows=rows;
+					if(sumRT<bestRT)
+						bestRT=sumRT;
+				}
+			}
+		}
+		T=T*coolingFactor;
+		if(bestRT==storeCurRT)
+			count++;
+		else
+			count=0;
+	}
+	if(candidateRsRT1>=candidateRsRT)
+		return false;
+	candidateRsRT=0;
+	candidateRows.clear();
+	for(int d=0;d<degree;d++)
+	{
+		int* index1=new int[k];
+		for(int j=0;j<k;j++)
+		{
+			index1[j]=0;
+		}
+		for(int j=0;j<tNum;j++)
+		{
+			if(rows[j]==d)
+			{
+				for(int l=0;l<t;l++)
+				{
+					if(index1[cIndex[ci[j]][l]]==0)
+						index1[cIndex[ci[j]][l]]=1;
+				}
+			}
+		}
+		vector<int> temp;
+		for(int j=0;j<k;j++)
+		{
+			if(index1[j]==1)
+				temp.insert(temp.begin()+j,MCA[rowNum][j]);
+			else
+				temp.insert(temp.begin()+j,rand()%v[j]);
+		}
+		int RT=getRuntime(temp);
+		if(findMinWithSA(temp,index1,RT)==true)
+			candidateRows.insert(candidateRows.begin()+d,cMinRT);
+		else
+			candidateRows.insert(candidateRows.begin()+d,temp);
+		candidateRsRT=candidateRsRT+cMinRTV;
+	}
+}
 void replaceOneRow3(int rowNum)
 {
+	candidateRows.clear();
+	candidateRsRT=100000000;
 	int* index=new int[k];
 	for(int i=0;i<k;i++)
 	{
@@ -1167,14 +1308,27 @@ void replaceOneRow3(int rowNum)
 			tNum++;
 		}
 	}
-	int RT=getRuntime(MCA[rowNum]);
-	if(findMinWithSA(MCA[rowNum],index,RT)==true)
+	int rowUCNum=getRuntime(MCA[rowNum]);
+	//findMinWithSAG(rowNum,1,rowUCNum,index,tNum,ci);
+	for(int i=1;i<(tNum+1)/5;i++)
 	{
-		sumRT=sumRT-RT+cMinRTV;
-		vector<int> temp=MCA[rowNum];
-		MCA[rowNum]=cMinRT;
-		updateCIR(1,temp,rowNum,0,false);
-		updateCIR(2,cMinRT,rowNum,0,false);
+		findMinWithSAG(rowNum,i,rowUCNum,index,tNum,ci);
+		//cout<<i<<" "<<N<<" "<<candidateRows.size()<<endl;
+		//verifyMCA();
+	}
+	if(candidateRsRT>=rowUCNum)
+		return;
+	int size=candidateRows.size();
+	sumRT=sumRT-rowUCNum+candidateRsRT;
+	vector<int> temp=MCA[rowNum];
+	MCA[rowNum]=candidateRows[0];
+	updateCIR(1,temp,rowNum,0,false);
+	updateCIR(2,candidateRows[0],rowNum,0,false);
+	for(int i=1;i<size;i++)
+	{
+		addOneRow(N,2,candidateRows[i]);
+		updateCIR(3,MCA[N],0,N,false);
+		N=N+1;
 	}
 }
 void printMCA()
