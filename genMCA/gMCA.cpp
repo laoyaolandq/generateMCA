@@ -446,7 +446,7 @@ void addOneRow(int rowNum,int type,vector<int> newRow)
 	}
 	else
 	{
-		MCA[rowNum]=newRow;
+		MCA.insert(MCA.begin()+rowNum,newRow);
 	}
 	vector<bool> temp1;
 	for(int j=0;j<paraCombNum;j++)
@@ -626,11 +626,12 @@ void tryChangeMij()
 void verifyMCA()
 {
 	G.clear();
+	curCombNum=0;
 	for(int i=0;i<N;i++)
 	{
 		addCombToG(MCA[i]);
 	}
-	if(G.size()==totalCombNum)
+	if(G.size()==totalCombNum&&curCombNum==totalCombNum)
 		printf("The answer is correct!\n");
 	else
 		printf("The answer is wrong!\n");
@@ -816,10 +817,11 @@ void findMin(int* index)
 			for(int i=0;i<k;i++)
 			{
 				float point=(float)(group[r1][i]+F*(group[r2][i]-group[r3][i]))-(int)(group[r1][i]+F*(group[r2][i]-group[r3][i]));
-				int temp=abs((int)(group[r1][i]+F*(group[r2][i]-group[r3][i])))%v[i];
+				int temp=abs((int)(group[r1][i]+F*(group[r2][i]-group[r3][i])));
 				int getLarger=rand()%10000;
 				if((float)getLarger/10000.0<=point)
 					temp=temp+1;
+				temp=temp%v[i];
 				candidateIn.insert(candidateIn.begin()+i,temp);
 			}
 			//crossover
@@ -946,10 +948,11 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 			for(int i=0;i<tNum;i++)
 			{
 				float point=(float)(group1[r1][i]+F1*(group1[r2][i]-group1[r3][i]))-(int)(group1[r1][i]+F1*(group1[r2][i]-group1[r3][i]));
-				int temp=abs((int)(group1[r1][i]+F1*(group1[r2][i]-group1[r3][i])))%degree;
+				int temp=abs((int)(group1[r1][i]+F1*(group1[r2][i]-group1[r3][i])));
 				int getLarger=rand()%10000;
 				if((float)getLarger/10000.0<=point)
 					temp=temp+1;
+				temp=temp%degree;
 				candidateIn.insert(candidateIn.begin()+i,temp);
 			}
 			//crossover
@@ -993,7 +996,7 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 	}
 	if(groupPro1[minIndex]>=candidateRsRT)
 		return;
-	candidateRsRT=groupPro1[minIndex];
+	candidateRsRT=0;
 	candidateRows.clear();
 	for(int d=0;d<degree;d++)
 	{
@@ -1016,6 +1019,7 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 		initGroup(rowNum,index1);
 		findMin(index1);
 		candidateRows.insert(candidateRows.begin()+d,cMinRT);
+		candidateRsRT=candidateRsRT+cMinRTV;
 	}
 }
 void replaceOneRow2(int rowNum)
@@ -1027,16 +1031,8 @@ void replaceOneRow2(int rowNum)
 	{
 		index[i]=0;
 	}
+	int* ci=new int[combNumInRow[rowNum]];
 	int tNum=0;
-	for(int c=0;c<paraCombNum;c++)
-	{
-		if(combWhetherUnique[rowNum][c]==true)
-		{
-			tNum++;
-		}
-	}
-	int* ci=new int[tNum];
-	tNum=0;
 	for(int c=0;c<paraCombNum;c++)
 	{
 		if(combWhetherUnique[rowNum][c]==true)
@@ -1052,10 +1048,11 @@ void replaceOneRow2(int rowNum)
 	}
 	int rowUCNum=getRuntime(MCA[rowNum]);
 	//findMinG(rowNum,1,rowUCNum,index,tNum,ci);
-	for(int i=1;i<tNum+1;i++)
+	for(int i=1;i<(tNum+1)/5;i++)
 	{
 		findMinG(rowNum,i,rowUCNum,index,tNum,ci);
-		cout<<i<<endl;
+		//cout<<i<<" "<<N<<" "<<candidateRows.size()<<endl;
+		//verifyMCA();
 	}
 	if(candidateRsRT>=rowUCNum)
 		return;
@@ -1155,16 +1152,8 @@ void replaceOneRow3(int rowNum)
 	{
 		index[i]=0;
 	}
+	int* ci=new int[combNumInRow[rowNum]];
 	int tNum=0;
-	for(int c=0;c<paraCombNum;c++)
-	{
-		if(combWhetherUnique[rowNum][c]==true)
-		{
-			tNum++;
-		}
-	}
-	int* ci=new int[tNum];
-	tNum=0;
 	for(int c=0;c<paraCombNum;c++)
 	{
 		if(combWhetherUnique[rowNum][c]==true)
@@ -1206,6 +1195,8 @@ void printMCA()
 		sumRT=sumRT+getRuntime(MCA[i]);
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	verifyMCA();
+
 	int tempSum;
 	do
 	{
@@ -1213,7 +1204,6 @@ void printMCA()
 		for(int i=0;i<N;i++)
 		{
 			replaceOneRow2(i);
-			verifyMCA();
 		}
 	}while(tempSum<sumRT);
 	deleteZRow();
@@ -1226,6 +1216,7 @@ void printMCA()
 		printf("\n");
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	verifyMCA();
 }
 int main()
 {
@@ -1280,7 +1271,6 @@ int main()
 	if(fitness(1,0,MCA[0])==0)
 	{
 		printMCA();
-		verifyMCA();
 		return 0;
 	}
 	findMCA=false;
@@ -1317,7 +1307,6 @@ int main()
 				if(fitness(1,0,MCA[0])==0)
 				{
 					printMCA();
-					verifyMCA();
 					return 0;
 				}
 				else
@@ -1346,7 +1335,6 @@ int main()
 		if(fitness(1,0,MCA[0])==0)
 		{
 			printMCA();
-			verifyMCA();
 			return 0;
 		}
 	}
