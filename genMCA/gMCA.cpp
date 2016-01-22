@@ -895,8 +895,8 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 	vector<vector<int>> group1;
 	vector<int> groupPro1;
 	int minIndex=0;
-	int NP1=100;
-	int gNum1=100;
+	int NP1=10;
+	int gNum1=10;
 	float F1=2;
 	float CR1=0.2;
 	for(int i=0;i<NP1;i++)
@@ -953,7 +953,7 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 			}
 			//crossover
 			int jrand;
-			jrand=rand()%k;
+			jrand=rand()%tNum;
 			for(int i=0;i<tNum;i++)
 			{
 				if(rand()%100<(CR1*100)||i==jrand)
@@ -990,7 +990,7 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 			equalTime=0;
 		}
 	}
-	if(groupPro1[minIndex]>candidateRsRT)
+	if(groupPro1[minIndex]>=candidateRsRT)
 		return;
 	candidateRsRT=groupPro1[minIndex];
 	candidateRows.clear();
@@ -1042,11 +1042,12 @@ void replaceOneRow2(int rowNum)
 		}
 	}
 	int rowUCNum=getRuntime(MCA[rowNum]);
-	findMinG(rowNum,1,rowUCNum,index,tNum,ci);
-	/*for(int i=1;i<tNum+1;i++)
+	//findMinG(rowNum,1,rowUCNum,index,tNum,ci);
+	for(int i=1;i<tNum+1;i++)
 	{
 		findMinG(rowNum,i,rowUCNum,index,tNum,ci);
-	}*/
+		cout<<i<<endl;
+	}
 	if(candidateRsRT>=rowUCNum)
 		return;
 	int size=candidateRows.size();
