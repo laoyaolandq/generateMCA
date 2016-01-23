@@ -467,12 +467,14 @@ void addOneRow(int rowNum,int type,vector<int> newRow)
 	combInRow.insert(combInRow.begin()+rowNum,temp2);
 	combNumInRow.insert(combNumInRow.begin()+rowNum,0);
 }
-void deleteZRow()
+bool deleteZRow()
 {
+	int flag=0;
 	for(int i=0;i<N;i++)
 	{
 		if(combNumInRow[i]==0)
 		{
+			flag=1;
 			updateCIR(1,MCA[i],i,0,false);
 			std::vector<vector<int>>::iterator iter1=MCA.begin()+i;
 			MCA.erase(iter1);
@@ -482,8 +484,14 @@ void deleteZRow()
 			combWhetherUnique.erase(iter3);
 			std::vector<int>::iterator iter4=combNumInRow.begin()+i;
 			combNumInRow.erase(iter4);
+			cout<<i<<" is zero."<<endl;
+			N=N-1;
 		}
 	}
+	if(flag==1)
+		return true;
+	else
+		return false;
 }
 double generateP(int c1,int c2,int T)
 {
@@ -1031,6 +1039,8 @@ void replaceOneRow2(int rowNum)
 	{
 		index[i]=0;
 	}
+	if(combNumInRow[rowNum]==0)
+		return;
 	int* ci=new int[combNumInRow[rowNum]];
 	int tNum=0;
 	for(int c=0;c<paraCombNum;c++)
@@ -1088,6 +1098,8 @@ int canculateMinRT(vector<int> row,int index,int oldV)
 }
 bool findMinWithSA(vector<int> row,int* index,int RT)
 {
+	cMinRT=row;
+	cMinRTV=RT;
 	int flag=0;
 	for(int i=0;i<k;i++)
 	{
@@ -1194,7 +1206,7 @@ bool findMinWithSAG(int rowNum,int degree,int RT,int* index,int tNum,int* ci)
 	{
 		rows.insert(rows.begin()+j,rand()%degree);
 	}
-	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
+	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.15;
 	int n=rows.size();
 	int V=n,frozenFactor=11;
 	int L;
@@ -1212,7 +1224,7 @@ bool findMinWithSAG(int rowNum,int degree,int RT,int* index,int tNum,int* ci)
 	while(count<frozenFactor&&T>Tf)
 	{
 		//L=n*k*V*V;
-		L=n*k*V;
+		L=5;
 		int storeCurRT=bestRT;
 		for(int i=0;i<L;i++)
 		{
@@ -1259,7 +1271,7 @@ bool findMinWithSAG(int rowNum,int degree,int RT,int* index,int tNum,int* ci)
 		}
 		for(int j=0;j<tNum;j++)
 		{
-			if(rows[j]==d)
+			if(cRows[j]==d)
 			{
 				for(int l=0;l<t;l++)
 				{
@@ -1283,6 +1295,7 @@ bool findMinWithSAG(int rowNum,int degree,int RT,int* index,int tNum,int* ci)
 			candidateRows.insert(candidateRows.begin()+d,temp);
 		candidateRsRT=candidateRsRT+cMinRTV;
 	}
+	return true;
 }
 void replaceOneRow3(int rowNum)
 {
@@ -1293,6 +1306,8 @@ void replaceOneRow3(int rowNum)
 	{
 		index[i]=0;
 	}
+	//if(combNumInRow[rowNum]==0)
+		//return;
 	int* ci=new int[combNumInRow[rowNum]];
 	int tNum=0;
 	for(int c=0;c<paraCombNum;c++)
@@ -1333,7 +1348,6 @@ void replaceOneRow3(int rowNum)
 }
 void printMCA()
 {
-	deleteZRow();
 	for(int i=0;i<N;i++)
 	{
 		for(int j=0;j<k;j++)
@@ -1342,7 +1356,6 @@ void printMCA()
 		}
 		printf("\n");
 	}
-	//need to change getAllCaseTime type
 	sumRT=0;
 	for(int i=0;i<N;i++)
 	{
@@ -1351,16 +1364,35 @@ void printMCA()
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 	verifyMCA();
 
-	int tempSum;
-	do
+	if(deleteZRow()==true)
 	{
+		for(int i=0;i<N;i++)
+		{
+			for(int j=0;j<k;j++)
+			{
+				printf("%d ",MCA[i][j]);
+			}
+			printf("\n");
+		}
+		sumRT=0;
+		for(int i=0;i<N;i++)
+		{
+			sumRT=sumRT+getRuntime(MCA[i]);
+		}
+		printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+		verifyMCA();
+	}
+
+	int tempSum;
+	//do
+	//{
 		tempSum=sumRT;
 		for(int i=0;i<N;i++)
 		{
 			replaceOneRow2(i);
+			//verifyMCA();
 		}
-	}while(tempSum<sumRT);
-	deleteZRow();
+	//}while(sumRT<tempSum);
 	for(int i=0;i<N;i++)
 	{
 		for(int j=0;j<k;j++)
@@ -1371,6 +1403,25 @@ void printMCA()
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 	verifyMCA();
+
+	if(deleteZRow()==true)
+	{
+		for(int i=0;i<N;i++)
+		{
+			for(int j=0;j<k;j++)
+			{
+				printf("%d ",MCA[i][j]);
+			}
+			printf("\n");
+		}
+		sumRT=0;
+		for(int i=0;i<N;i++)
+		{
+			sumRT=sumRT+getRuntime(MCA[i]);
+		}
+		printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+		verifyMCA();
+	}
 }
 int main()
 {
