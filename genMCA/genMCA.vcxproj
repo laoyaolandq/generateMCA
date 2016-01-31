@@ -150,6 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="gMCA.cpp" />
+    <ClCompile Include="pseudoCode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StringAsKey.h" />
