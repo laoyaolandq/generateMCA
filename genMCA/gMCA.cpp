@@ -6,6 +6,8 @@
 #include<math.h>
 #include<algorithm>
 #include<windows.h>
+#include<fstream>
+#include<sstream>
 using namespace std;
 bool findMCA;
 int p;
@@ -1346,15 +1348,17 @@ void replaceOneRow3(int rowNum)
 		N=N+1;
 	}
 }
-void printMCA()
+void printMCA(ofstream &output)
 {
 	for(int i=0;i<N;i++)
 	{
 		for(int j=0;j<k;j++)
 		{
-			printf("%d ",MCA[i][j]);
+			//printf("%d ",MCA[i][j]);
+			output<<MCA[i][j];
 		}
-		printf("\n");
+		//printf("\n");
+		output<<endl;
 	}
 	sumRT=0;
 	for(int i=0;i<N;i++)
@@ -1362,6 +1366,7 @@ void printMCA()
 		sumRT=sumRT+getRuntime(MCA[i]);
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 	verifyMCA();
 
 	if(deleteZRow()==true)
@@ -1370,9 +1375,11 @@ void printMCA()
 		{
 			for(int j=0;j<k;j++)
 			{
-				printf("%d ",MCA[i][j]);
+				//printf("%d ",MCA[i][j]);
+				output<<MCA[i][j];
 			}
-			printf("\n");
+			//printf("\n");
+			output<<endl;
 		}
 		sumRT=0;
 		for(int i=0;i<N;i++)
@@ -1380,6 +1387,7 @@ void printMCA()
 			sumRT=sumRT+getRuntime(MCA[i]);
 		}
 		printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+		output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 		verifyMCA();
 	}
 
@@ -1397,11 +1405,14 @@ void printMCA()
 	{
 		for(int j=0;j<k;j++)
 		{
-			printf("%d ",MCA[i][j]);
+			//printf("%d ",MCA[i][j]);
+			output<<MCA[i][j];
 		}
-		printf("\n");
+		//printf("\n");
+		output<<endl;
 	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 	verifyMCA();
 
 	if(deleteZRow()==true)
@@ -1410,9 +1421,11 @@ void printMCA()
 		{
 			for(int j=0;j<k;j++)
 			{
-				printf("%d ",MCA[i][j]);
+				//printf("%d ",MCA[i][j]);
+				output<<MCA[i][j];
 			}
-			printf("\n");
+			//printf("\n");
+			output<<endl;
 		}
 		sumRT=0;
 		for(int i=0;i<N;i++)
@@ -1420,127 +1433,175 @@ void printMCA()
 			sumRT=sumRT+getRuntime(MCA[i]);
 		}
 		printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+		output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 		verifyMCA();
 	}
 }
 int main()
 {
-	//initialize parameters and MCA
-	totalCombNum=0;
-	curCombNum=0;
-	paraCombNum=0;
-	printf("Input parameter t k p v1 v2 ... vk:\n");
-	scanf("%d%d%d",&t,&k,&p);
-	if(k==1)
+	ifstream input;
+	input.open("testcase.txt");
+	while(input.eof()!=EOF)
 	{
-		printf("error!\n");
-		return 0;
-	}
-	int* vt=new int[k];
-	for(int i=0;i<k;i++)
-	{
-		int temp;
-		scanf("%d",&temp);
-		if(temp==0)
+		v.clear();
+
+		ofstream output;
+		string name;
+		stringstream ss;
+		printf("\n\nNew\n");
+		output<<endl<<endl<<"New"<<endl;
+		printf("Input parameter t k p v1 v2 ... vk:\n");
+		output<<"Input parameter t k p v1 v2 ... vk:"<<endl;
+		//scanf("%d%d%d",&t,&k,&p);
+		input>>t>>k>>p;
+		ss<<t<<0<<k<<0<<p<<0;
+		if(k==1)
 		{
 			printf("error!\n");
 			return 0;
 		}
-		v.insert(v.begin()+i,temp);
-		vt[i]=temp;
-	}
-	for(int i=1;i<k;i++)
-	{
-		for(int j=0;j<i;j++)
+		int* vt=new int[k];
+		for(int i=0;i<k;i++)
 		{
-			if(vt[j]<vt[i])
+			int temp;
+			//scanf("%d",&temp);
+			input>>temp;
+			ss<<temp<<0;
+			if(temp==0)
 			{
-				int temp=vt[j];
-				vt[j]=vt[i];
-				vt[i]=temp;
+				printf("error!\n");
+				return 0;
+			}
+			v.insert(v.begin()+i,temp);
+			vt[i]=temp;
+		}
+		name=ss.str();
+		name=name.append(".txt");
+		output.open(name);
+		for(int i=1;i<k;i++)
+		{
+			for(int j=0;j<i;j++)
+			{
+				if(vt[j]<vt[i])
+				{
+					int temp=vt[j];
+					vt[j]=vt[i];
+					vt[i]=temp;
+				}
 			}
 		}
-	}
-	N=1;
-	for(int i=0;i<t;i++)
-	{
-		N=N*vt[i];
-	}
-	initMCA();
-	genCombs();
-	getAllCaseRuntime(2);
-	for(int i=0;i<N;i++)
-	{
-		addCombToG(MCA[i]);
-	}
-	if(fitness(1,0,MCA[0])==0)
-	{
-		printMCA();
-		return 0;
-	}
-	findMCA=false;
-	initCIR();
-	decideCIR();
-	//Simulated Annealing algorithm
-	double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
-	int V=N,frozenFactor=11;
-	int L;
-	int tDecreWOCombNumChange;
-	T=T0;
-	while(findMCA!=true)
-	{
-		tDecreWOCombNumChange=0;
-		int bestSFCurNum=curCombNum;
-		while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
+		N=1;
+		for(int i=0;i<t;i++)
 		{
-			//L=N*k*V*V;
-			L=N*k*V;
-			int storeCurNum=bestSFCurNum;
-			//int count=0,l=N*k*V;
-			for(int i=0;i<L;i++)
+			N=N*vt[i];
+		}
+		int storeN=N;
+		int countCS=0;
+		while(countCS<20)
+		{
+			N=storeN;
+			countCS++;
+			//initialize parameters and MCA
+			totalCombNum=0;
+			curCombNum=0;
+			paraCombNum=0;
+			findMCA=false;
+			MCA.clear();
+			combinations.clear();
+			combIndex.clear();
+			combNumInRow.clear();
+			combWhetherUnique.clear();
+			
+			runtime.clear();
+			cIndex.clear();
+			lessRTR.clear();
+			group.clear();
+			groupPro.clear();
+			combInRow.clear();
+			G.clear();
+			
+			initMCA();
+			genCombs();
+			getAllCaseRuntime(2);
+			for(int i=0;i<N;i++)
 			{
-				double r=((double)(rand()%10000))/10000.0;
-				if(r<0.7)
+				addCombToG(MCA[i]);
+			}
+			if(fitness(1,0,MCA[0])==0)
+			{
+				findMCA=true;
+				printMCA(output);
+				continue;
+			}
+			findMCA=false;
+			initCIR();
+			decideCIR();
+			//Simulated Annealing algorithm
+			double T0=4.0,Tf=pow(10,-10),coolingFactor=0.99;
+			int V=N,frozenFactor=11;
+			int L;
+			int tDecreWOCombNumChange;
+			T=T0;
+			while(findMCA!=true)
+			{
+				tDecreWOCombNumChange=0;
+				int bestSFCurNum=curCombNum;
+				while(findMCA!=true&&tDecreWOCombNumChange<frozenFactor&&T>Tf)
 				{
-					tryChangeMij();
+					//L=N*k*V*V;
+					L=N*k*V;
+					int storeCurNum=bestSFCurNum;
+					//int count=0,l=N*k*V;
+					for(int i=0;i<L;i++)
+					{
+						double r=((double)(rand()%10000))/10000.0;
+						if(r<0.7)
+						{
+							tryChangeMij();
+						}
+						else
+						{
+							int c=rand()%paraCombNum;
+							tryAddOneTuple(c);
+						}
+						if(fitness(1,0,MCA[0])==0)
+						{
+							findMCA=true;
+							printMCA(output);
+							break;
+						}
+						else
+						{
+							if(curCombNum>bestSFCurNum)
+							{
+								bestSFCurNum=curCombNum;
+							}
+							/*else
+							{
+								count++;
+							}
+							if(count>l)
+								break;*/
+						}
+					}
+					T=T*coolingFactor;
+					if(bestSFCurNum==storeCurNum)
+						tDecreWOCombNumChange++;
+					else
+						tDecreWOCombNumChange=0;
 				}
-				else
-				{
-					int c=rand()%paraCombNum;
-					tryAddOneTuple(c);
-				}
+				if(findMCA==true)
+					break;
+				addOneRow(N,1,MCA[0]);
+				updateCIR(3,MCA[N],0,N,false);
+				N=N+1;
 				if(fitness(1,0,MCA[0])==0)
 				{
-					printMCA();
-					return 0;
-				}
-				else
-				{
-					if(curCombNum>bestSFCurNum)
-					{
-						bestSFCurNum=curCombNum;
-					}
-					/*else
-					{
-						count++;
-					}
-					if(count>l)
-						break;*/
+					findMCA=true;
+					printMCA(output);
+					break;
 				}
 			}
-			T=T*coolingFactor;
-			if(bestSFCurNum==storeCurNum)
-				tDecreWOCombNumChange++;
-			else
-				tDecreWOCombNumChange=0;
-		}
-		addOneRow(N,1,MCA[0]);
-		updateCIR(3,MCA[N],0,N,false);
-		N=N+1;
-		if(fitness(1,0,MCA[0])==0)
-		{
-			printMCA();
-			return 0;
 		}
 	}
 	return 0;

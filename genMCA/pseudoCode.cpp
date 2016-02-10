@@ -1,4 +1,4 @@
-procedure Inner_Differential_Evolution
+/*procedure Inner_Differential_Evolution
 begin
 	intiate(M)
 	repeat
@@ -52,3 +52,4 @@ begin
 end
 
 
+*/
