@@ -40,7 +40,6 @@ class key
 public:
 	key(int* p1,int p2)
 	{
-		value=new int[t];
 		for(int i=0;i<t;i++)
 		{
 			value[i]=p1[i];
@@ -63,7 +62,7 @@ public:
 		}
 	}
 
-	int* value;
+	int value[6];
 	int paraNum;
 };
 class hash_class
@@ -195,6 +194,7 @@ void genCombs()
 		addCIndex(paraCombNum,perIndex);
 		paraCombNum++;
 	}while(next_permutation(perIndex,perIndex+k));
+	delete[] perIndex;
 }
 void addCombToG(vector<int> newRow)
 {
@@ -206,6 +206,7 @@ void addCombToG(vector<int> newRow)
 			value[i]=newRow[combIndex[c][i]];
 		}
 		key comb=key(value,c);
+		delete[] value;
 		if(G.find(comb)==G.end())
 		{
 			G.insert(make_pair(comb,1));
@@ -213,6 +214,7 @@ void addCombToG(vector<int> newRow)
 		}
 		else
 			G[comb]++;
+		//delete[] comb.value;
 	}
 }
 void initCIR()
@@ -237,6 +239,7 @@ void initCIR()
 		}
 		combInRow.insert(combInRow.begin()+i,temp2);
 		combNumInRow.insert(combNumInRow.begin()+i,0);
+		delete[] value;
 	}
 }
 void decideCIR()
@@ -254,6 +257,7 @@ void decideCIR()
 				value[i]=MCA[row][combIndex[c][i]];
 			}
 			key comb=key(value,c);
+			delete[] value;
 			if(G.find(comb)!=G.end())
 			{
 				combInRow[row][c]=comb;
@@ -302,6 +306,7 @@ void updateCIR(int type,vector<int> row,int curRowNum,int rowNum,bool ifNeed)// 
 			value[i]=row[combIndex[c][i]];
 		}
 		key comb=key(value,c);
+		delete[] value;
 		if(type==1)
 		{
 			if(G[comb]==1)
@@ -416,6 +421,7 @@ int fitness(int type,int oldRowIndex,vector<int> individual)//type=1 judge if we
 				value[i]=individual[combIndex[c][i]];
 			}
 			key comb=key(value,c);
+			delete[] value;
 			if(G.find(comb)==G.end()||(combInRow[oldRowIndex][c]==comb&&combWhetherUnique[oldRowIndex][c]==true))
 			{
 				incresedComb++;
@@ -468,6 +474,7 @@ void addOneRow(int rowNum,int type,vector<int> newRow)
 	}
 	combInRow.insert(combInRow.begin()+rowNum,temp2);
 	combNumInRow.insert(combNumInRow.begin()+rowNum,0);
+	delete[] value;
 }
 bool deleteZRow()
 {
@@ -597,6 +604,8 @@ void tryAddOneTuple(int c)
 		existCombNum=0;
 		dfs(newRow,curComb,vNum,0,c,flag);
 	}
+	delete[] curComb;
+	delete[] vNum;
 	return;
 }
 void tryChangeMij()
@@ -648,7 +657,7 @@ void verifyMCA()
 }
 void getAllCaseRuntime(int type)
 {
-	long long allPossibleTestCaseNum=1;
+	/*long long allPossibleTestCaseNum=1;
 	for(int i=0;i<k;i++)
 		allPossibleTestCaseNum=allPossibleTestCaseNum*v[i];
 	if(type==1)
@@ -660,11 +669,17 @@ void getAllCaseRuntime(int type)
 	{
 		for(long long j=0;j<allPossibleTestCaseNum;j++)
 			runtime.insert(runtime.begin()+j,-1);
-	}
+	}*/
 }
 int getRuntime(vector<int> row)
 {
-	long long product=row[0];
+	int RTime=0;
+	for(int i=0;i<k-1;i++)
+	{
+		RTime=RTime+row[i]*row[i+1];
+	}
+	return RTime;
+	/*long long product=row[0];
 	for(int i=1;i<k;i++)
 	{
 		product=product*v[i]+row[i];
@@ -683,7 +698,7 @@ int getRuntime(vector<int> row)
 	else
 	{
 		return runtime[product];
-	}
+	}*/
 }
 void dfs2(vector<int> newRow,int* index,int dep)
 {
@@ -751,6 +766,7 @@ void replaceOneRow(int rowNum)
 		updateCIR(1,temp,rowNum,0,false);
 		updateCIR(2,lessRTR,rowNum,0,false);
 	}
+	delete[] index;
 }
 void initGroup(int rowNum,int* index)
 {
@@ -892,6 +908,7 @@ int calculateRowsRT(int rowNum,vector<int> fCandiIn,int tNum,int* ci,int d)
 	initGroup(rowNum,index1);
 	findMin(index1);
 	return cMinRTV;
+	delete[] index1;
 }
 void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//tNum is the unique combs' number
 {
@@ -1030,6 +1047,7 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 		findMin(index1);
 		candidateRows.insert(candidateRows.begin()+d,cMinRT);
 		candidateRsRT=candidateRsRT+cMinRTV;
+		delete[] index1;
 	}
 }
 void replaceOneRow2(int rowNum)
@@ -1066,6 +1084,8 @@ void replaceOneRow2(int rowNum)
 		//cout<<i<<" "<<N<<" "<<candidateRows.size()<<endl;
 		//verifyMCA();
 	}
+	delete[] index;
+	delete[] ci;
 	if(candidateRsRT>=rowUCNum)
 		return;
 	int size=candidateRows.size();
@@ -1184,6 +1204,7 @@ int calculateRowsRT2(int rowNum,vector<int> rows,int tNum,int* ci,int d)
 	}
 	int RT=getRuntime(temp);
 	findMinWithSA(temp,index1,RT);
+	delete[] index1;
 	return cMinRTV;
 }
 bool findMinWithSAG(int rowNum,int degree,int RT,int* index,int tNum,int* ci)
@@ -1497,6 +1518,7 @@ int main()
 		}
 		int storeN=N;
 		int countCS=0;
+		delete[] vt;
 		while(countCS<20)
 		{
 			N=storeN;
@@ -1508,11 +1530,19 @@ int main()
 			findMCA=false;
 			MCA.clear();
 			combinations.clear();
+			for(int i=0;i<combIndex.size();i++)
+			{
+				delete[] combIndex[i];
+			}
 			combIndex.clear();
 			combNumInRow.clear();
 			combWhetherUnique.clear();
 			
 			runtime.clear();
+			for(int i=0;i<cIndex.size();i++)
+			{
+				delete[] cIndex[i];
+			}
 			cIndex.clear();
 			lessRTR.clear();
 			group.clear();
@@ -1603,6 +1633,8 @@ int main()
 				}
 			}
 		}
+		output.close();
 	}
+	input.close();
 	return 0;
 }
