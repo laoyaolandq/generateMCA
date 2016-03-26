@@ -28,7 +28,7 @@ begin
 			get newM'
 		M' <- newM'
 	until stopcriterion
-	find the best agent b in M
+	find the best agent b in M'
 	Return distribution b
 end
 

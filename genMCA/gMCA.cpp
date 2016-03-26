@@ -673,6 +673,13 @@ void getAllCaseRuntime(int type)
 }
 int getRuntime(vector<int> row)
 {
+	//the function which is used to calculate the rows' runtime is defined here
+	/*int RTime=0;
+	for(int i=0;i<k;i++)
+	{
+		RTime=RTime+row[i]*row[i]*row[i];
+	}
+	return RTime;*/
 	int RTime=0;
 	for(int i=0;i<k-1;i++)
 	{
@@ -686,11 +693,10 @@ int getRuntime(vector<int> row)
 	}
 	if(runtime[product]==-1)
 	{
-		//the function which can be used to calculate the rows' runtime is defined here
 		int RTime=0;
 		for(int i=0;i<k-1;i++)
 		{
-			RTime=RTime+row[i]*row[i+1];
+			RTime=RTime+row[i]*row[i]*row[i]*row[i+1]*row[i+1]*row[i+1];
 		}
 		runtime[product]=RTime;
 		return RTime;
@@ -772,8 +778,8 @@ void initGroup(int rowNum,int* index)
 {
 	group.clear();
 	cMinRT.clear();
-	NP=100;
-	gNum=100;
+	NP=50;
+	gNum=50;
 	F=0.2;
 	CR=0.2;
 	for(int i=0;i<NP;i++)
@@ -910,6 +916,9 @@ int calculateRowsRT(int rowNum,vector<int> fCandiIn,int tNum,int* ci,int d)
 	return cMinRTV;
 	delete[] index1;
 }
+int testValue;
+int tNP1;
+int tGNum1;
 void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//tNum is the unique combs' number
 {
 	if(degree==1)
@@ -924,9 +933,9 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 	vector<vector<int>> group1;
 	vector<int> groupPro1;
 	int minIndex=0;
-	int NP1=5;
-	int gNum1=5;
-	float F1=2;
+	int NP1=tNP1;
+	int gNum1=tGNum1;
+	float F1=0.2;
 	float CR1=0.2;
 	for(int i=0;i<NP1;i++)
 	{
@@ -1050,7 +1059,7 @@ void findMinG(int rowNum,int degree,int curMinRT,int* index,int tNum,int* ci)//t
 		delete[] index1;
 	}
 }
-void replaceOneRow2(int rowNum)
+void replaceOneRow2(int rowNum,int rows)
 {
 	candidateRows.clear();
 	candidateRsRT=100000000;
@@ -1077,12 +1086,10 @@ void replaceOneRow2(int rowNum)
 		}
 	}
 	int rowUCNum=getRuntime(MCA[rowNum]);
-	//findMinG(rowNum,1,rowUCNum,index,tNum,ci);
-	for(int i=1;i<(tNum+1)/5;i++)
+	//for(int i=1;i<(tNum+1)/5;i++)
+	for(int i=1;i<3;i++)
 	{
 		findMinG(rowNum,i,rowUCNum,index,tNum,ci);
-		//cout<<i<<" "<<N<<" "<<candidateRows.size()<<endl;
-		//verifyMCA();
 	}
 	delete[] index;
 	delete[] ci;
@@ -1411,17 +1418,26 @@ void printMCA(ofstream &output)
 		output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 		verifyMCA();
 	}
-
+	int storeN=N;
+	vector<vector<int>> tMCA=MCA;
+	vector<int> tCombNumInRow=combNumInRow;
+	vector<int*> tCombIndex=combIndex;
+	vector<vector<bool>> tCombWhetherUnique=combWhetherUnique;
+	vector<int*> tCIndex=cIndex;
+	vector<vector<key>>	tCombInRow=combInRow;
+	unordered_map <key,int,hash_class,equal_class> tG=G;
+	tNP1=5;tGNum1=15;
 	int tempSum;
 	//do
 	//{
 		tempSum=sumRT;
 		for(int i=0;i<N;i++)
 		{
-			replaceOneRow2(i);
+			replaceOneRow2(i,2);
 			//verifyMCA();
 		}
 	//}while(sumRT<tempSum);
+	deleteZRow();
 	for(int i=0;i<N;i++)
 	{
 		for(int j=0;j<k;j++)
@@ -1432,11 +1448,94 @@ void printMCA(ofstream &output)
 		//printf("\n");
 		output<<endl;
 	}
+	sumRT=0;
+	for(int i=0;i<N;i++)
+	{
+		sumRT=sumRT+getRuntime(MCA[i]);
+	}
 	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 	output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 	verifyMCA();
+	int count=0;
+	while(count++<4)
+	{
+		tNP1=tNP1+5;
+		//tGNum1=tGNum1+5;
+	N=storeN;
+	MCA=tMCA;
+	G=tG;
+	combNumInRow=tCombNumInRow;
+	combIndex=tCombIndex;
+	combWhetherUnique=tCombWhetherUnique;
+	cIndex=tCIndex;
+	combInRow=tCombInRow;
+	//do
+	//{
+		tempSum=sumRT;
+		for(int i=0;i<N;i++)
+		{
+			replaceOneRow2(i,2);
+			//verifyMCA();
+		}
+	//}while(sumRT<tempSum);
+	deleteZRow();
+	for(int i=0;i<N;i++)
+	{
+		for(int j=0;j<k;j++)
+		{
+			//printf("%d ",MCA[i][j]);
+			output<<MCA[i][j];
+		}
+		//printf("\n");
+		output<<endl;
+	}
+	sumRT=0;
+	for(int i=0;i<N;i++)
+	{
+		sumRT=sumRT+getRuntime(MCA[i]);
+	}
+	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
+	verifyMCA();
+	}
+	/*N=storeN;
+	MCA=tMCA;
+	G=tG;
+	combNumInRow=tCombNumInRow;
+	combIndex=tCombIndex;
+	combWhetherUnique=tCombWhetherUnique;
+	cIndex=tCIndex;
+	combInRow=tCombInRow;
+	//do
+	//{
+		tempSum=sumRT;
+		for(int i=0;i<N;i++)
+		{
+			replaceOneRow2(i,3);
+			//verifyMCA();
+		}
+	//}while(sumRT<tempSum);
+	deleteZRow();
+	for(int i=0;i<N;i++)
+	{
+		for(int j=0;j<k;j++)
+		{
+			//printf("%d ",MCA[i][j]);
+			output<<MCA[i][j];
+		}
+		//printf("\n");
+		output<<endl;
+	}
+	sumRT=0;
+	for(int i=0;i<N;i++)
+	{
+		sumRT=sumRT+getRuntime(MCA[i]);
+	}
+	printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
+	output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
+	verifyMCA();*/
 
-	if(deleteZRow()==true)
+	/*if(deleteZRow()==true)
 	{
 		for(int i=0;i<N;i++)
 		{
@@ -1456,13 +1555,13 @@ void printMCA(ofstream &output)
 		printf("totalCombNum is %d,N is %d,totalRuntime is %d.\n",totalCombNum,N,sumRT);
 		output<<"totalCombNum,N,totalRuntime are "<<totalCombNum<<" "<<N<<" "<<sumRT<<endl<<endl<<endl;
 		verifyMCA();
-	}
+	}*/
 }
 int main()
 {
 	ifstream input;
 	input.open("testcase.txt");
-	while(input.eof()!=EOF)
+	while(input.peek()!=EOF)
 	{
 		v.clear();
 
@@ -1519,7 +1618,7 @@ int main()
 		int storeN=N;
 		int countCS=0;
 		delete[] vt;
-		while(countCS<20)
+		while(countCS<3)
 		{
 			N=storeN;
 			countCS++;
