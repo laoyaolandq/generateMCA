@@ -685,7 +685,8 @@ int getRuntime(vector<int> row)
 	{
 		RTime=RTime+row[i]*row[i+1];
 	}*/
-	double temp=349.308*row[0]*row[1]+388.4343*row[1]*row[2]+494.8463*row[2]*row[3]+467.3195*row[3]*row[4]+569.1318*row[4]*row[5]+541.4659*row[5]*row[6]+1077.6573*row[6]*row[7]+414.3779*row[7]*row[8]-29.5446*row[8]*row[9]-457.2587*row[9]*row[10];
+	//double temp=349.308*row[0]*row[1]+388.4343*row[1]*row[2]+494.8463*row[2]*row[3]+467.3195*row[3]*row[4]+569.1318*row[4]*row[5]+541.4659*row[5]*row[6]+1077.6573*row[6]*row[7]+414.3779*row[7]*row[8]-29.5446*row[8]*row[9]-457.2587*row[9]*row[10];
+	double temp=2296.2912+3694.6544*row[6];
 	RTime=(int)temp;
 	return RTime;
 	/*long long product=row[0];
