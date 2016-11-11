@@ -3,6 +3,7 @@
 #include<vector>
 #include<stdlib.h>
 #include<time.h>
+#include<stdio.h>
 #include<math.h>
 #include<algorithm>
 #include<windows.h>
@@ -680,14 +681,26 @@ int getRuntime(vector<int> row)
 		RTime=RTime+row[i]*row[i]*row[i];
 	}
 	return RTime;*/
-	int RTime=0;
-	/*for(int i=0;i<k-1;i++)
+	double RTime=0;
+	for(int i=0;i<k-1;i++)
 	{
 		RTime=RTime+row[i]*row[i+1];
+	}
+	/*srand((int)time(0));
+	int rd = rand()%10;
+	if(rand()%2 == 0)
+	{
+		RTime = RTime*((100.0-rd)/100.0);
+	}
+	else{
+		RTime = RTime*((100.0+rd)/100.0);
 	}*/
 	//double temp=349.308*row[0]*row[1]+388.4343*row[1]*row[2]+494.8463*row[2]*row[3]+467.3195*row[3]*row[4]+569.1318*row[4]*row[5]+541.4659*row[5]*row[6]+1077.6573*row[6]*row[7]+414.3779*row[7]*row[8]-29.5446*row[8]*row[9]-457.2587*row[9]*row[10];
-	double temp=2296.2912+3694.6544*row[6];
-	RTime=(int)temp;
+	//double temp=2296.2912+3694.6544*row[6];
+	//double temp = 6.7713-5.5377*row[3]+(1-row[3])*(840.68*row[4]-835.51*row[4]*row[7]-102.27*(1-row[7])*(row[0]-1)*row[0]*row[4]);
+	//double temp = 11.5286+1.3594*row[0]+147.8646*row[2]-0.9844*row[8]+(1-row[2])*(-2.1510*row[1]+8.9844*(row[1]-1)*(row[1]-2));
+	//double temp = 47.4920-37.3479*row[3]*(1-row[5])*(1-row[6])+ceil((1-row[3]+row[5]+row[6])/3)*(-0.5282*(row[0])*(1-row[1])*(1-row[2])-28.0028*(row[0])*(row[1]));
+	//RTime=(int)temp;
 	return RTime;
 	/*long long product=row[0];
 	for(int i=1;i<k;i++)
@@ -1090,7 +1103,7 @@ void replaceOneRow2(int rowNum,int rows)
 	}
 	int rowUCNum=getRuntime(MCA[rowNum]);
 	//for(int i=1;i<(tNum+1)/5;i++)
-	for(int i=1;i<3;i++)
+	for(int i=1;i<2;i++)
 	{
 		findMinG(rowNum,i,rowUCNum,index,tNum,ci);
 	}
@@ -1562,6 +1575,7 @@ void printMCA(ofstream &output)
 }
 int main()
 {
+	int begin = clock();
 	ifstream input;
 	input.open("testcase.txt");
 	while(input.peek()!=EOF)
@@ -1621,7 +1635,7 @@ int main()
 		int storeN=N;
 		int countCS=0;
 		delete[] vt;
-		while(countCS<3)
+		while(countCS<1)
 		{
 			N=storeN;
 			countCS++;
@@ -1738,5 +1752,7 @@ int main()
 		output.close();
 	}
 	input.close();
+	int end = clock();
+	cout<<((end-begin)/CLOCKS_PER_SEC)<<endl;
 	return 0;
 }
