@@ -1585,9 +1585,9 @@ int main()
 		ofstream output;
 		string name;
 		stringstream ss;
-		printf("\n\nNew\n");
+		//printf("\n\nNew\n");
 		output<<endl<<endl<<"New"<<endl;
-		printf("Input parameter t k p v1 v2 ... vk:\n");
+		//printf("Input parameter t k p v1 v2 ... vk:\n");
 		output<<"Input parameter t k p v1 v2 ... vk:"<<endl;
 		//scanf("%d%d%d",&t,&k,&p);
 		input>>t>>k>>p;
@@ -1753,6 +1753,6 @@ int main()
 	}
 	input.close();
 	int end = clock();
-	cout<<((end-begin)/CLOCKS_PER_SEC)<<endl;
+	cout<<((end-begin)/CLOCKS_PER_SEC)<<"s"<<endl;
 	return 0;
 }
